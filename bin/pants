@@ -1,3 +1,18 @@
 #!/usr/bin/env ruby
 
-abort "you need to write me"
+require 'thor'
+require_relative '../lib/pants'
+
+class PantsRunner < Thor
+  desc "split [IP] [PORT]", "UDP read on the IP and PORT"
+  def split(read_ip, read_port)
+    pants = Pants.new(read_ip, read_port, :UDP) do |seem|
+      seem.add_writer('127.0.0.1', 1235, :UDP)
+    end
+
+    pants.start
+  end
+end
+
+
+PantsRunner.start
