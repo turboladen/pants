@@ -1,32 +1,72 @@
 = pants
 
-* FIX (url)
+* https://github.com/turboladen/pants
 
 == DESCRIPTION:
 
-FIX (describe your package)
+Pants redirects IO using {http://rubyeventmachine.com EventMachine} from one
+input source to many different destinations.  In some senses, pants is like a
+*nix pipe that allows for duplicating data across many pipes (like splice and
+tee).
 
 == FEATURES/PROBLEMS:
 
-* FIX (list of features or problems)
+* Read/write UDP unicast data
+* Read/write UDP multicast data
+* Pluggable: write your own reader or writer
 
 == SYNOPSIS:
 
-  FIX (code sample of usage)
+Read unicast UDP inbound data and write to a number of other unicast UDP clients:
+
+  pants = Pants.new('0.0.0.0', 1234) do |seam|
+    seam.add_writer('10.0.0.10', 1234)
+    seam.add_writer('10.0.0.11', 1234)
+    seam.add_writer('10.0.0.11', 2345)
+  end
+
+  pants.run
+
+Read multicast UDP inbound data and write to a number of other unicast UDP clients:
+
+  pants = Pants.new('239.0.0.1', 1234) do |seam|
+    seam.add_writer('10.0.0.10', 1234)
+    seam.add_writer('10.0.0.11', 1234)
+    seam.add_writer('10.0.0.11', 2345)
+  end
+
+  pants.run
+
+
+The amount of data you can replicate really depends, of course, on system
+resources.  On an i7 MacBook Pro with 16GB RAM and 2 wired NICs, I've been able
+to duplicate a single 720p video + audio stream over UDP 200 times (pushing ~1.4
+Gbps out) with almost no quality loss on client ends.  If you plan to duplicate
+more than 20 streams, you'll need to start tweaking EventMachine thread pool
+settings; generally you should set EventMachines +threadpool_size+ to the number
+of output streams so it can process all of the data concurrently.  If you're on
+OSX or *nix, you might benefit from using EventMachine's .epoll and .kqueue
+feature.  More on that {http://eventmachine.rubyforge.org/docs/EPOLL.html here}.
 
 == REQUIREMENTS:
 
-* FIX (list of requirements)
+* Rubies (tested)
+  * MRI 1.9.3
+  * JRuby 1.7.0
+* Gems
+  * eventmachine (>=1.0.0)
+  * log_switch
+  * thor
 
 == INSTALL:
 
-* FIX (sudo gem install, anything else)
+* (sudo) gem install
 
 == DEVELOPERS:
 
 After checking out the source, run:
 
-  $ rake newb
+  $ bundle install
 
 This task will install any missing dependencies, run the tests/specs,
 and generate the RDoc.
@@ -35,7 +75,7 @@ and generate the RDoc.
 
 (The MIT License)
 
-Copyright (c) 2012 FIX
+Copyright (c) 2012 Steve Loveless
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
