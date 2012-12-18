@@ -54,7 +54,7 @@ class Pants
     end
   end
 
-  def start
+  def run
     if EM.reactor_running?
       log "Joining reactor..."
       @starter.call
