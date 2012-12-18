@@ -22,6 +22,7 @@ class Pants
 
     def initialize(read_ip, read_port)
       log "Adding a #{self.class} at #{read_ip}:#{read_port}..."
+
       @connection = EM.open_datagram_socket(read_ip, read_port, UDPReceiveConnection)
     end
   end

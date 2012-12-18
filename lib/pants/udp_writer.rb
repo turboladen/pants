@@ -4,6 +4,8 @@ require_relative 'logger'
 
 class Pants
   class UDPSender < EM::Connection
+    include LogSwitch::Mixin
+
     def initialize(data_channel, dest_ip, dest_port)
       @data_channel = data_channel
       @dest_ip = dest_ip
@@ -12,6 +14,7 @@ class Pants
 
     def post_init
       @data_channel.subscribe do |data|
+        log ">> #{data.size}"
         send_datagram(data, @dest_ip, @dest_port)
       end
     end
