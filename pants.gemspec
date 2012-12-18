@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.test_files = Dir.glob("{spec}/**/*")
   s.require_paths = ["lib"]
 
+  s.add_dependency "eventmachine", ">= 1.0.0"
   s.add_dependency "log_switch", ">= 0.4.0"
   s.add_dependency "thor"
 
