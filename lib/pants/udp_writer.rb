@@ -13,7 +13,7 @@ class Pants
       @dest_port = dest_port
 
       if Addrinfo.ip(@dest_ip).ipv4_multicast? || Addrinfo.ip(@dest_ip).ipv6_multicast?
-        log "Got a multicast address: #{@dest_ip}:#{@dest_por}"
+        log "Got a multicast address: #{@dest_ip}:#{@dest_port}"
         setup_multicast_socket(@dest_ip)
       else
         log "Got a unicast address: #{@dest_ip}:#{@dest_port}"
