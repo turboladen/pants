@@ -1,4 +1,5 @@
 require_relative 'pants/logger'
+require_relative 'pants/file_reader'
 require_relative 'pants/udp_reader'
 require_relative 'pants/udp_writer'
 
@@ -15,24 +16,25 @@ class Pants
     super()
 
     @starter = proc do
-      case args.size
+      @reader = case args.size
       when 1
-        # file
+        Pants::FileReader.new(args.first)
       when 2
         # Default socket... whatever that should be?
-        @reader = Pants::UDPReader.new(ip, port)
+        Pants::UDPReader.new(ip, port)
       when 3
         # Specifying socket type
         ip, port, protocol = args
-
-        if protocol == :UDP
-          @reader = Pants::UDPReader.new(ip, port)
-        end
+        Pants::UDPReader.new(ip, port) if protocol == :UDP
       else
         raise ArgumentError
       end
 
       yield self if block_given?
+
+      if @reader.is_a? Pants::FileReader
+        @reader.connection.resume
+      end
     end
   end
 
