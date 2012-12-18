@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_dependency "log_switch", ">= 0.4.0"
+  s.add_dependency "thor"
 
   s.add_development_dependency "rake"
   s.add_development_dependency "rspec", ">= 2.6.0"
