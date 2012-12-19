@@ -1,16 +1,49 @@
 #!/usr/bin/env ruby
 
 require 'thor'
+require 'uri'
 require_relative '../lib/pants'
 
 class PantsRunner < Thor
-  desc "split [IP] [PORT]", "UDP read on the IP and PORT"
-  def split(read_ip, read_port)
-    pants = Pants.new(read_ip, read_port, :UDP) do |seem|
-      seem.add_writer('127.0.0.1', 1235, :UDP)
+  desc "split [URI]", "read on the URI and send to --destinations"
+  long_desc <<-LONGDESC
+This will read in any data given by the URI and redirect it to all of the I/O\x5
+objects given by --destinations.  Specify all I/O objects as URIs in the form:\x5
+
+  udp://127.0.0.1:1234, file:///home/bob/BarrellRoll.avi
+
+Separate multiple destinations by a space:
+
+  $ pants udp://127.0.0.1:1234 --destinations=udp://239.0.0.1:1234 udp://10.0.0.1:1234
+
+  LONGDESC
+  option :destinations, type: :array, required: true
+  option :verbose, type: :boolean
+  def split(read_uri)
+    Pants::Logger.log = options[:verbose] ? true : false
+
+    add_writers = lambda do |seem|
+      options[:destinations].each do |write_uri|
+        write_uri = URI(write_uri)
+
+        if write_uri.scheme == "file"
+          seem.add_writer(write_uri.path)
+        else
+          seem.add_writer(write_uri.host, write_uri.port,
+            write_uri.scheme.to_sym)
+        end
+      end
     end
 
-    pants.start
+    read_uri = URI(read_uri)
+    pants = if read_uri.scheme == "file"
+
+    else
+      Pants.new(read_uri.host, read_uri.port,
+        read_uri.scheme.to_sym, &add_writers)
+    end
+
+    pants.run
   end
 end
 
