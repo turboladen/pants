@@ -25,7 +25,7 @@ class Pants
       when 3
         # Specifying socket type
         ip, port, protocol = args
-        Pants::UDPReader.new(ip, port) if protocol == :UDP
+        Pants::UDPReader.new(ip, port) if protocol == :udp
       else
         raise ArgumentError
       end
@@ -42,15 +42,20 @@ class Pants
     @writers << case args.size
     when 1
       # file
+      abort "Not yet implemented for Files"
     when 2
       # Default socket
+      ip, port = args
+      Pants::UDPWriter.new(@reader.connection.data_channel, ip, port)
     when 3
       # Specifying socket type
       ip, port, protocol = args
 
-      if protocol == :UDP
+      if protocol == :udp
         Pants::UDPWriter.new(@reader.connection.data_channel, ip, port)
       end
+    else
+      abort "Not sure what to do with these args: #{args}"
     end
   end
 
