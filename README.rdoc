@@ -15,7 +15,19 @@ tee).
 * Read/write UDP multicast data
 * Pluggable: write your own reader or writer
 
+The amount of data you can replicate really depends, of course, on system
+resources.  On an i7 MacBook Pro with 16GB RAM and 2 wired NICs, I've been able
+to duplicate a single 720p video + audio stream over unicast UDP 200 times (pushing ~1.4
+Gbps out) with almost no quality loss on client ends.  If you plan to duplicate
+more than 20 streams, you'll need to start tweaking EventMachine thread pool
+settings; generally you should set EventMachines +threadpool_size+ to the number
+of output streams so it can process all of the data concurrently.  If you're on
+OSX or *nix, you might benefit from using EventMachine's .epoll and .kqueue
+feature.  More on that {http://eventmachine.rubyforge.org/docs/EPOLL.html here}.
+
 == SYNOPSIS:
+
+=== As a library
 
 Read unicast UDP inbound data and write to a number of other unicast UDP clients:
 
@@ -37,16 +49,12 @@ Read multicast UDP inbound data and write to a number of other unicast UDP clien
 
   pants.run
 
+=== As an executable
 
-The amount of data you can replicate really depends, of course, on system
-resources.  On an i7 MacBook Pro with 16GB RAM and 2 wired NICs, I've been able
-to duplicate a single 720p video + audio stream over UDP 200 times (pushing ~1.4
-Gbps out) with almost no quality loss on client ends.  If you plan to duplicate
-more than 20 streams, you'll need to start tweaking EventMachine thread pool
-settings; generally you should set EventMachines +threadpool_size+ to the number
-of output streams so it can process all of the data concurrently.  If you're on
-OSX or *nix, you might benefit from using EventMachine's .epoll and .kqueue
-feature.  More on that {http://eventmachine.rubyforge.org/docs/EPOLL.html here}.
+The examples from above can also be run via the command-line app like this:
+
+  $ pants udp://0.0.0.0:1234 --destinations=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
+  $ pants udp://239.0.0.1:1234 --destinations=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
 
 == REQUIREMENTS:
 
@@ -57,6 +65,9 @@ feature.  More on that {http://eventmachine.rubyforge.org/docs/EPOLL.html here}.
   * eventmachine (>=1.0.0)
   * log_switch
   * thor
+
+_NOTE:_ Multicasting with JRuby doesn't seem to work; EM fails to allow setting
+socket options, which is necessary to do multicasting.
 
 == INSTALL:
 
