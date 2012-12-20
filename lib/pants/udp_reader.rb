@@ -9,8 +9,8 @@ class Pants
 
     attr_reader :data_channel
 
-    def initialize
-      @data_channel = EM::Channel.new
+    def initialize(data_channel)
+      @data_channel = data_channel
       port, ip = Socket.unpack_sockaddr_in(get_sockname)
 
       if Addrinfo.ip(ip).ipv4_multicast? || Addrinfo.ip(ip).ipv6_multicast?
