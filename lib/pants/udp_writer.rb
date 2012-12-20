@@ -48,7 +48,7 @@ class Pants
       log "Adding a #{self.class} at #{write_ip}:#{write_port}..."
 
       EM.defer do
-        @connection = EM.open_datagram_socket('0.0.0.0', 0, UDPSender, data_channel,
+        @connection = EM.open_datagram_socket('0.0.0.0', write_port, UDPSender, data_channel,
           write_ip, write_port)
       end
     end
