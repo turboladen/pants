@@ -36,7 +36,6 @@ class Pants
   end
 
   def add_writer(*args)
-    log "Args: #{args}"
     @writers << case args.size
     when 1
       # file

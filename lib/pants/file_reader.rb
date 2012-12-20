@@ -12,7 +12,6 @@ class Pants
     end
 
     def receive_data(data)
-      log "<< #{data.size}"
       @data_channel << data
     end
 

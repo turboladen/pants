@@ -12,8 +12,6 @@ class Pants
 
     def post_init
       @data_channel.subscribe do |data|
-        log ">> #{data.size}"
-
         begin
           @io.write_nonblock(data)
         rescue IOError
