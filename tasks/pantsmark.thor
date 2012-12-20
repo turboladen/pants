@@ -23,6 +23,11 @@ class Pantsmark < Thor
         tee.run
       end
 
+      options[:times].times do |i|
+        result = %x[diff "#{file_path}" pants_test#{i}]
+        puts "Diff result: #{result}" unless result.empty?
+      end
+
       x.report(" FileUtils.cp:") do
         threads = []
 

@@ -65,8 +65,11 @@ class Pants
       log "Starting reactor..."
 
       EM.run do
+        EM.next_tick do
+          @reader.starter.call(@writers)
+        end
+
         @writers.each { |writer| writer.starter.call }
-        @reader.starter.call(@writers)
       end
     end
   end
