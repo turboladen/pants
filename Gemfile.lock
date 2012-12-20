@@ -11,6 +11,7 @@ GEM
   specs:
     diff-lcs (1.1.3)
     eventmachine (1.0.0)
+    eventmachine (1.0.0-java)
     log_switch (0.4.0)
     multi_json (1.5.0)
     rake (10.0.3)
@@ -38,4 +39,5 @@ DEPENDENCIES
   rake
   rspec (>= 2.6.0)
   simplecov
+  thor
   yard (>= 0.7.2)
