@@ -13,9 +13,12 @@ tee).
 
 == FEATURES/PROBLEMS:
 
+All readers can write to any other writer:
 * Read/write UDP unicast data
 * Read/write UDP multicast data
+* Read/write Files
 * Pluggable: write your own reader or writer
+
 
 The amount of data you can replicate really depends, of course, on system
 resources.  On an i7 MacBook Pro with 16GB RAM and 2 wired NICs, I've been able
@@ -26,6 +29,17 @@ settings; generally you should set EventMachines +threadpool_size+ to the number
 of output streams so it can process all of the data concurrently.  If you're on
 OSX or *nix, you might benefit from using EventMachine's .epoll and .kqueue
 feature.  More on that {http://eventmachine.rubyforge.org/docs/EPOLL.html here}.
+
+File reading/writing also depends on many factors, such as the number and size
+of files, disk capabilities, and general I/O capabilities of your system.  If
+you'd like to benchmark, there's a {Thor}[http://whatisthor.com] task in
++tasks/+ that will compare pants to FileUtils.cp and `cp` in copying a file
+some number of times (default to 100).
+
+Example:
+
+  $ tasks/pantsmark.thor file_copy some_song.mp3 --times=50
+
 
 == SYNOPSIS:
 
@@ -51,16 +65,37 @@ Read multicast UDP inbound data and write to a number of other unicast UDP clien
 
   pants.run
 
+Read unicast UDP inbound data and write to a UDP client and a file:
+
+  pants = Pants.new('0.0.0.0', 1234) do |seam|
+    seam.add_writer('10.0.0.10', 1234)
+    seam.add_writer('socket_data.raw')
+  end
+
+  pants.run
+
+Read a file and send out via UDP:
+
+  pants = Pants.new('socket_data.raw') do |seam|
+    seam.add_writer('10.0.0.10', 1234)
+    seam.add_writer('239.0.0.1', 1234)
+  end
+
+  pants.run
+
 === As an executable
 
 The examples from above can also be run via the command-line app like this:
 
   $ pants udp://0.0.0.0:1234 --destinations=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
   $ pants udp://239.0.0.1:1234 --destinations=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
+  $ pants udp://0.0.0.0:1234 --destinations=udp://10.0.0.10:1234 file:///home/me/socket_data.raw
+  $ pants file:///home/me/socket_data.raw --destinations=udp://10.0.0.10:1234 udp://239.0.0.1:1234
 
 == REQUIREMENTS:
 
 * Rubies (tested)
+  * MRI 1.9.2
   * MRI 1.9.3
   * JRuby 1.7.0
 * Gems
