@@ -24,19 +24,39 @@ class Pantsmark < Thor
       end
 
       x.report(" FileUtils.cp:") do
+        threads = []
+
         options[:times].times do |i|
-          FileUtils.cp('pants_test1', "cp_test#{i}")
+          threads << Thread.new do
+            FileUtils.cp('pants_test1', "fu_cp_test#{i}")
+          end
+
+          threads.last.join
+        end
+      end
+
+      x.report("           cp:") do
+        threads = []
+
+        options[:times].times do |i|
+          threads << Thread.new do
+            `cp pants_test1 cp_test#{i}`
+          end
+
+          threads.last.join
         end
       end
     end
   rescue
-    FileUtils.rm(Dir["./pants_test*"])
-    FileUtils.rm(Dir["./cp_test*"])
+    FileUtils.rm_rf(Dir["./pants_test*"])
+    FileUtils.rm_rf(Dir["./fu_cp_test*"])
+    FileUtils.rm_rf(Dir["./cp_test*"])
 
     raise
   ensure
-    FileUtils.rm(Dir["./pants_test*"])
-    FileUtils.rm(Dir["./cp_test*"])
+    FileUtils.rm_rf(Dir["./pants_test*"])
+    FileUtils.rm_rf(Dir["./fu_cp_test*"])
+    FileUtils.rm_rf(Dir["./cp_test*"])
   end
 end
 
