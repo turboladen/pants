@@ -1,5 +1,6 @@
 require_relative 'pants/logger'
 require_relative 'pants/file_reader'
+require_relative 'pants/file_writer'
 require_relative 'pants/udp_reader'
 require_relative 'pants/udp_writer'
 
@@ -12,47 +13,45 @@ class Pants
   attr_reader :writers
 
   def initialize(*args)
-    @writers = []
     super()
+    @writers = []
+    @data_channel = EM::Channel.new
 
-    @starter = proc do
-      @reader = case args.size
-      when 1
-        Pants::FileReader.new(args.first)
-      when 2
-        # Default socket... whatever that should be?
-        Pants::UDPReader.new(ip, port)
-      when 3
-        # Specifying socket type
-        ip, port, protocol = args
-        Pants::UDPReader.new(ip, port) if protocol == :udp
-      else
-        raise ArgumentError
-      end
+    yield self if block_given?
 
-      yield self if block_given?
-
-      if @reader.is_a? Pants::FileReader
-        @reader.connection.resume
-      end
+    @reader = case args.size
+    when 1
+      Pants::FileReader.new(@data_channel, args.first)
+    when 2
+      # Default socket... whatever that should be?
+      Pants::UDPReader.new(@data_channel, ip, port)
+    when 3
+      # Specifying socket type
+      ip, port, protocol = args
+      protocol = protocol.to_s.downcase.to_sym
+      Pants::UDPReader.new(@data_channel, ip, port) if protocol == :udp
+    else
+      raise ArgumentError
     end
   end
 
   def add_writer(*args)
+    log "Args: #{args}"
     @writers << case args.size
     when 1
       # file
-      abort "Not yet implemented for Files"
+      Pants::FileWriter.new(@data_channel, args.first)
     when 2
       # Default socket
       ip, port = args
-      Pants::UDPWriter.new(@reader.connection.data_channel, ip, port)
+      Pants::UDPWriter.new(@data_channel, ip, port)
     when 3
       # Specifying socket type
       ip, port, protocol = args
+      protocol = protocol.to_s.downcase.to_sym
 
       if protocol == :udp
-        Pants::UDPWriter.new(@reader.connection.data_channel, ip, port)
+        Pants::UDPWriter.new(@data_channel, ip, port)
       end
     else
       abort "Not sure what to do with these args: #{args}"
@@ -62,10 +61,14 @@ class Pants
   def run
     if EM.reactor_running?
       log "Joining reactor..."
-      @starter.call
+      @reader.starter.call
     else
       log "Starting reactor..."
-      EM.run(&@starter)
+
+      EM.run do
+        @writers.each { |writer| writer.starter.call }
+        @reader.starter.call(@writers)
+      end
     end
   end
 end
