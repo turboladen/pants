@@ -6,33 +6,52 @@ class Pants
   class FileReadConnection < EventMachine::Connection
     include LogSwitch::Mixin
 
-    attr_reader :data_channel
-
-    def initialize
-      @data_channel = EM::Channel.new
+    def initialize(data_channel, finisher)
+      @data_channel = data_channel
+      @finisher = finisher
     end
 
     def receive_data(data)
       log "<< #{data.size}"
       @data_channel << data
     end
+
+    def unbind
+      log "Unbinding"
+      @finisher.succeed
+    end
   end
 
   class FileReader
     include LogSwitch::Mixin
 
-    attr_reader :connection
+    attr_reader :starter
 
-    def initialize(file_path)
-      @connection = if file_path.is_a? File
-        log "Adding file #{file_path}..."
+    def initialize(data_channel, file_path)
+      file = File.open(file_path, 'r')
 
-        EM.attach(file_path, FileReadConnection)
-      elsif file_path.is_a? String
+      finisher = EM::DefaultDeferrable.new
+
+      finisher.callback do
+        log "Got called back after finished reading."
+
+        EM.next_tick do
+          @writers.each do |writer|
+            writer.finisher.call
+          end
+
+          EM.stop_event_loop
+        end
+      end
+
+      @starter = proc do |writers|
+        @writers = writers
         log "Opening and adding file at #{file_path}..."
+        EM.attach(file, FileReadConnection, data_channel, finisher)
+      end
 
-        file = File.open(file_path, 'r')
-        EM.attach(file, FileReadConnection)
+      if EM.reactor_running?
+        @starter.call
       end
     end
   end
