@@ -22,7 +22,7 @@ class Pants
     end
 
     def receive_data(data)
-      log "<< #{data.size}"
+      #log "<< #{data.size}"
       @data_channel << data
     end
 
@@ -45,10 +45,11 @@ class Pants
 
     attr_accessor :connection
 
-    def initialize(read_ip, read_port)
+    def initialize(data_channel, read_ip, read_port)
       log "Adding a #{self.class} at #{read_ip}:#{read_port}..."
 
-      @connection = EM.open_datagram_socket(read_ip, read_port, UDPReceiveConnection)
+      @connection = EM.open_datagram_socket(read_ip, read_port,
+        UDPReceiveConnection, data_channel)
     end
   end
 end
