@@ -11,7 +11,7 @@ class Pantsmark < Thor
   method_option :times, type: :numeric, :default => 100
   def file_copy(file_path)
     Benchmark.bm do |x|
-      Pants::Logger.log = false
+      Pants.log = false
 
       x.report("\tpants:") do
         tee = Pants.new(file_path) do |tee|
