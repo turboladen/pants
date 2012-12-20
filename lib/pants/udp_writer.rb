@@ -32,7 +32,6 @@ class Pants
             Pants::Logger.log "#{io.__id__}: Spliced 500 bytes to socket packet"
 
             new_packet = io.read_nonblock(500)
-            puts "'#{new_packet.size}'"
             send_datagram(new_packet, @dest_ip, @dest_port)
           rescue EOFError
             socket_sender.notify(new_packet)
