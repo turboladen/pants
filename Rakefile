@@ -18,6 +18,6 @@ end
 # Alias for rubygems-test
 task :test => :spec
 
-task :default => :build
+task :default => :test
 
 # vim: syntax=ruby
