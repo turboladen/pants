@@ -2,9 +2,7 @@ require 'log_switch'
 
 
 class Pants
-  class Logger
-    extend LogSwitch
-  end
+  extend LogSwitch
 end
 
-Pants::Logger.log_class_name = true
+Pants.log_class_name = true
