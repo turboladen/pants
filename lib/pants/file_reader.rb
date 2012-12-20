@@ -1,4 +1,5 @@
 require 'eventmachine'
+require_relative 'base_reader'
 require_relative 'logger'
 
 
@@ -23,6 +24,7 @@ class Pants
     #
     # @param [String] data The file data to write to the channel.
     def receive_data(data)
+      log "<< #{data.size}"
       @data_channel << data
     end
 
@@ -34,45 +36,41 @@ class Pants
   end
 
 
-  # This is the interface for FileReaderConnections.  It controls starting,
-  # stopping, and threading the connection.
-  class FileReader
+  # This is the interface for FileReaderConnections.  It controls starting and
+  # stopping the connection.
+  class FileReader < BaseReader
     include LogSwitch::Mixin
-
-    # The block to be called when starting up.  Writers should all have been
-    # added before calling this; if writers are started after this, they won't
-    # get the first bytes that are read (due to start-up time).
-    attr_reader :starter
 
     # @param [EventMachine::Channel] data_channel The channel to write to, so
     #   that all writers can do their thing.
     #
     # @param [String] file_path Path to the file to read.
     def initialize(data_channel, file_path)
-      file = File.open(file_path, 'rb')
+      super()
 
-      finisher = EM::DefaultDeferrable.new
+      init_starter(data_channel, file_path)
+      @starter.call if EM.reactor_running?
+    end
 
-      finisher.callback do
-        log "Got called back after finished reading."
+    private
 
-        EM.next_tick do
-          @writers.each do |writer|
-            writer.finisher.call
-          end
-
-          EM.stop_event_loop
-        end
-      end
+    # Associates the list of writers (that should have already been created
+    # already), opens the file, and starts reading it.
+    #
+    # @param [EventMachine::Channel] data_channel The channel to send read data
+    #   to.
+    #
+    # @param [String] file_path The path to the file to read.
+    #
+    # @return [Proc] The code that should get called when Pants starts.
+    def init_starter(data_channel, file_path)
+      log "Opening file."
+      file = File.open(file_path, 'r')
 
       @starter = proc do |writers|
         @writers = writers
         log "Opening and adding file at #{file_path}..."
         EM.attach(file, FileReaderConnection, data_channel, finisher)
-      end
-
-      if EM.reactor_running?
-        @starter.call
       end
     end
   end
