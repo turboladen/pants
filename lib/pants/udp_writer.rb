@@ -1,13 +1,31 @@
 require 'eventmachine'
-require 'ipaddr'
+require 'socket'
 require_relative 'logger'
+require_relative 'network_helpers'
 
 
 class Pants
 
-  class UDPSender < EM::Connection
+  # This is the EventMachine connection that connects the data from the data
+  # channel (put there by the reader you're using) to the IP and UDP port you
+  # want to send it to.
+  class UDPWriterConnection < EM::Connection
     include LogSwitch::Mixin
+    include Pants::NetworkHelpers
 
+    # Packets get split up before writing if they're over this size.
+    PACKET_SPLIT_THRESHOLD = 1500
+
+    # Packets get split up to this size before writing.
+    PACKET_SPLIT_SIZE = 500
+
+    # @param [EventMachine::Channel] data_channel The channel to expect data on
+    #   and write to the socket.
+    #
+    # @param [String] dest_ip The IP address to send data to.  Can be unicast or
+    #   multicast.
+    #
+    # @param [Fixnum] dest_port The UDP port to send data to.
     def initialize(data_channel, dest_ip, dest_port)
       @data_channel = data_channel
       @dest_ip = dest_ip
@@ -21,17 +39,21 @@ class Pants
       end
     end
 
+    # Sends data received on the data channel to the destination IP and port.
+    # Since data may have been put in to the channel by a File reader (and will
+    # therefore be larger chunks of data than you'll want to send in a packet
+    # over the wire), it will split packets into +PACKET_SPLIT_SIZE+ sized
+    # packets before sending.
     def post_init
       @data_channel.subscribe do |data|
-        if data.size > 1500
-          log "Got big data: #{data.size}.  Splitting..."
+        if data.size > PACKET_SPLIT_THRESHOLD
+          log "#{__id__} Got big data: #{data.size}.  Splitting..."
           io = StringIO.new(data)
           io.binmode
 
           begin
-            Pants::Logger.log "#{io.__id__}: Spliced 500 bytes to socket packet"
-
-            new_packet = io.read_nonblock(500)
+            log "#{__id__} Spliced 500 bytes to socket packet"
+            new_packet = io.read_nonblock(PACKET_SPLIT_SIZE)
             send_datagram(new_packet, @dest_ip, @dest_port)
           rescue EOFError
             socket_sender.notify(new_packet)
@@ -45,16 +67,34 @@ class Pants
     end
   end
 
+
+  # This is the interface to UDPWriterConnections.  It defines what happens
+  # when you want to start it up and stop it.
   class UDPWriter
     include LogSwitch::Mixin
 
-    def initialize(data_channel, write_ip, write_port)
-      log "Adding a #{self.class} at #{write_ip}:#{write_port}..."
+    attr_reader :starter
 
-      EM.defer do
-        @connection = EM.open_datagram_socket('0.0.0.0', write_port, UDPSender, data_channel,
-          write_ip, write_port)
+    attr_reader :finisher
+
+    def initialize(data_channel, write_ip, write_port)
+      connection = nil
+
+      @starter = proc do
+        log "#{__id__} Adding a #{self.class} at #{write_ip}:#{write_port}..."
+
+        EM.defer do
+          connection = EM.open_datagram_socket('0.0.0.0', write_port, UDPWriterConnection,
+            data_channel, write_ip, write_port)
+        end
       end
+
+      @finisher = proc do
+        log "Finishing ID #{__id__}"
+        connection.close_connection_after_writing
+      end
+
+      @starter.call if EM.reactor_running?
     end
   end
 end
