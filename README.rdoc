@@ -75,6 +75,23 @@ Read a file and send out via UDP:
     seam.add_writer('udp://239.0.0.1:1234')
   end
 
+Get kray-kray:
+
+  EM.threadpool_size = 110
+  EM.kqueue         # This has been problematic for me...
+  EM.epoll
+
+  Pants.read('udp://0.0.0.0:1234') do |seam|
+    100.times do |i|
+      seam.add_writer("udp://10.0.0.10:#{1235 + i}")
+    end
+
+    10.times do |i|
+      seam.add_writer("socket_data_#{i}.raw")
+    end
+  end
+
+
 === As an executable
 
 The examples from above can also be run via the command-line app like this:
