@@ -1,5 +1,6 @@
 require 'eventmachine'
 require 'socket'
+require_relative 'base_reader'
 require_relative 'logger'
 require_relative 'network_helpers'
 
@@ -38,7 +39,7 @@ class Pants
 
   # This is the interface for UDPReaderConnections.  It controls what happens
   # when the you want to start it up and stop it.
-  class UDPReader
+  class UDPReader < BaseReader
     include LogSwitch::Mixin
 
     # @param [EventMachine::Channel] data_channel The channel to write to, so
