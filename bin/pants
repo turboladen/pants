@@ -20,30 +20,15 @@ Separate multiple destinations by a space:
   option :destinations, type: :array, required: true
   option :verbose, type: :boolean
   def split(read_uri)
-    Pants::Logger.log = options[:verbose] ? true : false
+    Pants.log = options[:verbose] ? true : false
 
     add_writers = lambda do |seem|
       options[:destinations].each do |write_uri|
-        write_uri = URI(write_uri)
-
-        if write_uri.scheme == "file"
-          seem.add_writer(write_uri.path)
-        else
-          seem.add_writer(write_uri.host, write_uri.port,
-            write_uri.scheme.to_sym)
-        end
+        seem.add_writer(write_uri)
       end
     end
 
-    read_uri = URI(read_uri)
-    pants = if read_uri.scheme == "file"
-
-    else
-      Pants.new(read_uri.host, read_uri.port,
-        read_uri.scheme.to_sym, &add_writers)
-    end
-
-    pants.run
+    Pants.read(read_uri, &add_writers)
   end
 end
 
