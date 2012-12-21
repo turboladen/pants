@@ -47,28 +47,28 @@ Example:
 
 Read unicast UDP inbound data and write to a number of other unicast UDP clients:
 
-  pants = Pants.new('0.0.0.0', 1234) do |seam|
-    seam.add_writer('10.0.0.10', 1234)
-    seam.add_writer('10.0.0.11', 1234)
-    seam.add_writer('10.0.0.11', 2345)
+  pants = Pants.new('udp://0.0.0.0:1234') do |seam|
+    seam.add_writer('udp://10.0.0.10:1234')
+    seam.add_writer('udp://10.0.0.11:1234')
+    seam.add_writer('udp://10.0.0.11:2345')
   end
 
   pants.run
 
 Read multicast UDP inbound data and write to a number of other unicast UDP clients:
 
-  pants = Pants.new('239.0.0.1', 1234) do |seam|
-    seam.add_writer('10.0.0.10', 1234)
-    seam.add_writer('10.0.0.11', 1234)
-    seam.add_writer('10.0.0.11', 2345)
+  pants = Pants.new('udp://239.0.0.1:1234') do |seam|
+    seam.add_writer('udp://10.0.0.10:1234')
+    seam.add_writer('udp://10.0.0.11:1234')
+    seam.add_writer('udp://10.0.0.11:2345')
   end
 
   pants.run
 
 Read unicast UDP inbound data and write to a UDP client and a file:
 
-  pants = Pants.new('0.0.0.0', 1234) do |seam|
-    seam.add_writer('10.0.0.10', 1234)
+  pants = Pants.new('udp://0.0.0.0:1234') do |seam|
+    seam.add_writer('udp://10.0.0.10:1234')
     seam.add_writer('socket_data.raw')
   end
 
@@ -77,8 +77,8 @@ Read unicast UDP inbound data and write to a UDP client and a file:
 Read a file and send out via UDP:
 
   pants = Pants.new('socket_data.raw') do |seam|
-    seam.add_writer('10.0.0.10', 1234)
-    seam.add_writer('239.0.0.1', 1234)
+    seam.add_writer('udp://10.0.0.10:1234')
+    seam.add_writer('udp://239.0.0.1:1234')
   end
 
   pants.run
@@ -90,7 +90,7 @@ The examples from above can also be run via the command-line app like this:
   $ pants udp://0.0.0.0:1234 --destinations=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
   $ pants udp://239.0.0.1:1234 --destinations=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
   $ pants udp://0.0.0.0:1234 --destinations=udp://10.0.0.10:1234 file:///home/me/socket_data.raw
-  $ pants file:///home/me/socket_data.raw --destinations=udp://10.0.0.10:1234 udp://239.0.0.1:1234
+  $ pants /home/me/socket_data.raw --destinations=udp://10.0.0.10:1234 udp://239.0.0.1:1234
 
 == REQUIREMENTS:
 

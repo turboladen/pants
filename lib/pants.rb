@@ -1,3 +1,4 @@
+require 'uri'
 require_relative 'pants/logger'
 require_relative 'pants/file_reader'
 require_relative 'pants/file_writer'
@@ -12,65 +13,69 @@ class Pants
   attr_reader :reader
   attr_reader :writers
 
-  def initialize(*args)
-    super()
+
+  # @param [String] uri_string The URI to the object to read.  Can be a file:///,
+  #   udp://.
+  def initialize(uri_string)
     @writers = []
     @data_channel = EM::Channel.new
 
     yield self if block_given?
 
-    @reader = case args.size
-    when 1
-      Pants::FileReader.new(@data_channel, args.first)
-    when 2
-      # Default socket... whatever that should be?
-      Pants::UDPReader.new(@data_channel, ip, port)
-    when 3
-      # Specifying socket type
-      ip, port, protocol = args
-      protocol = protocol.to_s.downcase.to_sym
-      Pants::UDPReader.new(@data_channel, ip, port) if protocol == :udp
+    begin
+      uri = URI(uri_string)
+    rescue URI::InvalidURIError
+      @reader = Pants::FileReader.new(@data_channel, uri_string)
     else
-      raise ArgumentError
+      @reader = case uri.scheme
+      when nil
+        Pants::FileReader.new(@data_channel, uri.path)
+      when 'file'
+        Pants::FileReader.new(@data_channel, uri.path)
+      when 'udp'
+        Pants::UDPReader.new(@data_channel, uri.host, uri.port)
+      else
+        raise ArgumentError, "Don't know what to do with reader: #{uri}"
+      end
     end
   end
 
-  def add_writer(*args)
-    @writers << case args.size
-    when 1
-      # file
-      Pants::FileWriter.new(@data_channel, args.first)
-    when 2
-      # Default socket
-      ip, port = args
-      Pants::UDPWriter.new(@data_channel, ip, port)
-    when 3
-      # Specifying socket type
-      ip, port, protocol = args
-      protocol = protocol.to_s.downcase.to_sym
-
-      if protocol == :udp
-        Pants::UDPWriter.new(@data_channel, ip, port)
-      end
+  # @param [String] uri_string The URI to the object to read.  Can be a file:///,
+  #   udp://.
+  def add_writer(uri_string)
+    begin
+      uri = URI(uri_string)
+    rescue URI::InvalidURIError
+      @writers << Pants::FileWriter.new(@data_channel, uri.path)
     else
-      abort "Not sure what to do with these args: #{args}"
+      @writers << case uri.scheme
+      when nil
+        Pants::FileWriter.new(@data_channel, uri.path)
+      when 'file'
+        Pants::FileWriter.new(@data_channel, uri.path)
+      when 'udp'
+        Pants::UDPWriter.new(@data_channel, uri.host, uri.port)
+      else
+        raise ArgumentError, "Not sure what to do writer: #{uri}"
+      end
     end
   end
 
   def run
+    starter = proc do
+      EM.next_tick do
+        @reader.starter.call(@writers)
+      end
+
+      @writers.each { |writer| writer.starter.call }
+    end
+
     if EM.reactor_running?
       log "Joining reactor..."
-      @reader.starter.call
+      starter.call
     else
       log "Starting reactor..."
-
-      EM.run do
-        EM.next_tick do
-          @reader.starter.call(@writers)
-        end
-
-        @writers.each { |writer| writer.starter.call }
-      end
+      EM.run(&starter)
     end
   end
 end
