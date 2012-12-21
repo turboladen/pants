@@ -65,6 +65,10 @@ class Pants
         end
       end
     end
+
+    def receive_data(data)
+      log "Got data (should I?): #{data.size}, port #{@dest_port}, peer: #{get_peername}"
+    end
   end
 
 
@@ -84,7 +88,7 @@ class Pants
         log "#{__id__} Adding a #{self.class} at #{write_ip}:#{write_port}..."
 
         EM.defer do
-          connection = EM.open_datagram_socket('0.0.0.0', write_port, UDPWriterConnection,
+          connection = EM.open_datagram_socket('0.0.0.0', 0, UDPWriterConnection,
             data_channel, write_ip, write_port)
         end
       end
