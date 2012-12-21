@@ -51,6 +51,7 @@ class Pants
     def initialize(data_channel, read_ip, read_port)
       super()
 
+      @info = "udp://#{read_ip}:#{read_port}"
       init_starter(data_channel, read_ip, read_port)
       @starter.call if EM.reactor_running?
     end

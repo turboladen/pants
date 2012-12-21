@@ -6,8 +6,15 @@ class Pants
     # get the first bytes that are read (due to start-up time).
     attr_reader :starter
 
+    # Allows for adding "about me" info, depending on the reader type.  This
+    # info is printed out when Pants starts, so you know get confirmation of
+    # what you're about to do.  If you don't define this in your reader, nothing
+    # will be printed out.
+    attr_reader :info
+
     def initialize
       @writers = []
+      @info = ""
     end
 
     # The callback that gets called when the Reader is done reading.  Tells all

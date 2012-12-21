@@ -48,6 +48,7 @@ class Pants
     def initialize(data_channel, file_path)
       super()
 
+      @info = file_path
       init_starter(data_channel, file_path)
       @starter.call if EM.reactor_running?
     end

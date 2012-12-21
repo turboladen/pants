@@ -4,6 +4,7 @@ require_relative 'pants/file_reader'
 require_relative 'pants/file_writer'
 require_relative 'pants/udp_reader'
 require_relative 'pants/udp_writer'
+require_relative 'pants/version'
 
 
 # Pants sort of mimics Linux's +splice+ command/call by taking a reader (the input) and
@@ -78,6 +79,10 @@ class Pants
   # Starts the EventMachine reactor
   def run
     starter = proc do
+      puts "Pants v#{Pants::VERSION}"
+      puts "Starting read on: #{@reader.info}"
+      puts "Writing to #{@writers.size} writers"
+
       EM.next_tick do
         @reader.starter.call(@writers)
       end
