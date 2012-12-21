@@ -32,6 +32,7 @@ class Pants
   # @param [String] uri_string The URI to the object to read.  Can be a file:///,
   #   udp://.
   def initialize(uri_string)
+    setup_signals
     @writers = []
     @data_channel = EM::Channel.new
 
@@ -76,7 +77,7 @@ class Pants
     end
   end
 
-  # Starts the EventMachine reactor
+  # Starts the EventMachine reactor, the reader and the writers.
   def run
     starter = proc do
       puts "Pants v#{Pants::VERSION}"
@@ -96,6 +97,36 @@ class Pants
     else
       log "Starting reactor..."
       EM.run(&starter)
+    end
+  end
+
+  # Tells the reader to signal to its writers that it's time to finish.
+  def stop
+    puts "Stop called.  Closing readers and writers..."
+    @reader.finisher.set_deferred_success
+  end
+
+  # Stop, then run.
+  def restart
+    stop
+    puts "Restarting..."
+    run
+  end
+
+  private
+
+  # Register signals:
+  # * TERM & QUIT calls +stop+ to shutdown gracefully.
+  # * INT calls <tt>stop!</tt> to force shutdown.
+  # * HUP calls <tt>restart</tt> to ... surprise, restart!
+  # * USR1 reopen log files.
+  def setup_signals
+    trap('INT')  { stop }
+    trap('TERM') { stop }
+
+    unless !!RUBY_PLATFORM =~ /mswin|mingw/
+      trap('QUIT') { stop }
+      trap('HUP')  { restart }
     end
   end
 end
