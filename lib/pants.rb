@@ -10,9 +10,23 @@ require_relative 'pants/udp_writer'
 # redirects it to multiple writers (the outputs).
 class Pants
   include LogSwitch::Mixin
+
+  # Convenience method for doing:
+  #
+  #   pants = Pants.new('udp://0.0.0.0:1234') do |seam|
+  #     # ...
+  #   end
+  #
+  #   pants.run
+  #
+  # @param [String] uri Takes a URI ('udp://...' or 'file://...') or the path
+  #   to a file.
+  def self.read(uri, &block)
+    new(uri, &block).run
+  end
+
   attr_reader :reader
   attr_reader :writers
-
 
   # @param [String] uri_string The URI to the object to read.  Can be a file:///,
   #   udp://.
@@ -61,6 +75,7 @@ class Pants
     end
   end
 
+  # Starts the EventMachine reactor
   def run
     starter = proc do
       EM.next_tick do

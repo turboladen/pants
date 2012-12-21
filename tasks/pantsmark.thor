@@ -14,13 +14,11 @@ class Pantsmark < Thor
       Pants.log = false
 
       x.report("\tpants:") do
-        tee = Pants.new(file_path) do |tee|
+        Pants.read(file_path) do |tee|
           options[:times].times do |i|
             tee.add_writer("pants_test#{i}")
           end
         end
-
-        tee.run
       end
 
       options[:times].times do |i|

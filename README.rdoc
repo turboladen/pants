@@ -47,41 +47,33 @@ Example:
 
 Read unicast UDP inbound data and write to a number of other unicast UDP clients:
 
-  pants = Pants.new('udp://0.0.0.0:1234') do |seam|
+  Pants.read('udp://0.0.0.0:1234') do |seam|
     seam.add_writer('udp://10.0.0.10:1234')
     seam.add_writer('udp://10.0.0.11:1234')
     seam.add_writer('udp://10.0.0.11:2345')
   end
-
-  pants.run
 
 Read multicast UDP inbound data and write to a number of other unicast UDP clients:
 
-  pants = Pants.new('udp://239.0.0.1:1234') do |seam|
+  Pants.read('udp://239.0.0.1:1234') do |seam|
     seam.add_writer('udp://10.0.0.10:1234')
     seam.add_writer('udp://10.0.0.11:1234')
     seam.add_writer('udp://10.0.0.11:2345')
   end
 
-  pants.run
-
 Read unicast UDP inbound data and write to a UDP client and a file:
 
-  pants = Pants.new('udp://0.0.0.0:1234') do |seam|
+  Pants.read('udp://0.0.0.0:1234') do |seam|
     seam.add_writer('udp://10.0.0.10:1234')
     seam.add_writer('socket_data.raw')
   end
 
-  pants.run
-
 Read a file and send out via UDP:
 
-  pants = Pants.new('socket_data.raw') do |seam|
+  Pants.read('socket_data.raw') do |seam|
     seam.add_writer('udp://10.0.0.10:1234')
     seam.add_writer('udp://239.0.0.1:1234')
   end
-
-  pants.run
 
 === As an executable
 
