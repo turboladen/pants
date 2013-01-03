@@ -48,11 +48,11 @@ class Pants
     # @param [String] read_ip The IP address to read on.
     #
     # @param [Fixnum] read_port The UDP port to read on.
-    def initialize(write_to_channel, read_ip, read_port)
-      super()
+    def initialize(read_ip, read_port, write_to_channel=nil)
+      super(write_to_channel)
 
       @info = "udp://#{read_ip}:#{read_port}"
-      init_starter(write_to_channel, read_ip, read_port)
+      init_starter(read_ip, read_port)
       @starter.call if EM.reactor_running?
     end
 
@@ -64,12 +64,11 @@ class Pants
     # @param [String] read_ip The IP address to read on.
     #
     # @param [Fixnum] read_port The UDP port to read on.
-    def init_starter(data_channel, read_ip, read_port)
-      @starter = proc do |writers|
-        @writers = writers
+    def init_starter(read_ip, read_port)
+      @starter = proc do
         log "Adding a #{self.class} at #{read_ip}:#{read_port}..."
         EM.open_datagram_socket(read_ip, read_port, UDPReaderConnection,
-          data_channel)
+          @write_to_channel)
       end
     end
   end

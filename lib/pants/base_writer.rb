@@ -20,5 +20,10 @@ class Pants
         warn "You haven't defined a starter--are you sure this writer does something?"
       end
     end
+
+    def start
+      log "Starting..."
+      @starter.call
+    end
   end
 end

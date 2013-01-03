@@ -45,11 +45,12 @@ class Pants
     #   so that all writers can do their thing.
     #
     # @param [String] file_path Path to the file to read.
-    def initialize(write_to_channel, file_path)
-      super()
+    def initialize(file_path, write_to_channel=nil)
+      super(write_to_channel)
 
+      log "file path #{file_path}"
       @info = file_path
-      init_starter(write_to_channel, file_path)
+      init_starter(file_path)
       @starter.call if EM.reactor_running?
     end
 
@@ -58,20 +59,16 @@ class Pants
     # Associates the list of writers (that should have already been created
     # already), opens the file, and starts reading it.
     #
-    # @param [EventMachine::Channel] data_channel The channel to send read data
-    #   to.
-    #
     # @param [String] file_path The path to the file to read.
     #
     # @return [Proc] The code that should get called when Pants starts.
-    def init_starter(data_channel, file_path)
-      log "Opening file."
+    def init_starter(file_path)
+      log "Opening file '#{file_path}'"
       file = File.open(file_path, 'r')
 
-      @starter = proc do |writers|
-        @writers = writers
+      @starter = proc do
         log "Opening and adding file at #{file_path}..."
-        EM.attach(file, FileReaderConnection, data_channel, finisher)
+        EM.attach(file, FileReaderConnection, @write_to_channel, finisher)
       end
     end
   end

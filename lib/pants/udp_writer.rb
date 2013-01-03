@@ -76,7 +76,7 @@ class Pants
   class UDPWriter < BaseWriter
     include LogSwitch::Mixin
 
-    def initialize(read_from_channel, write_ip, write_port)
+    def initialize(write_ip, write_port, read_from_channel)
       connection = nil
 
       @starter = proc do

@@ -1,12 +1,16 @@
 require 'uri'
-require_relative 'pants/av_file_demuxer'
 require_relative 'pants/logger'
-require_relative 'pants/file_reader'
-require_relative 'pants/file_writer'
-require_relative 'pants/udp_reader'
-require_relative 'pants/udp_writer'
 require_relative 'pants/version'
 
+require_relative 'pants/av_file_demuxer'
+require_relative 'pants/file_reader'
+require_relative 'pants/udp_reader'
+
+class Pants
+  class Error < StandardError
+
+  end
+end
 
 # Pants sort of mimics Linux's +splice+ command/call by taking a reader (the input) and
 # redirects it to multiple writers (the outputs).
@@ -14,19 +18,14 @@ class Pants
   include LogSwitch::Mixin
 
   DEFAULT_READERS = [
-      { uri_scheme: nil, klass: Pants::FileReader },
-      { uri_scheme: 'file', klass: Pants::FileReader },
-      { uri_scheme: 'udp', klass: Pants::UDPReader }
+      { uri_scheme: nil, klass: Pants::FileReader, args: [:path] },
+      { uri_scheme: 'file', klass: Pants::FileReader, args: [:path] },
+      { uri_scheme: 'udp', klass: Pants::UDPReader, args: [:host, :port] }
     ]
 
   DEFAULT_DEMUXERS = [
     { uri_scheme: nil, klass: Pants::AVFileDemuxer },
     { uri_scheme: 'file', klass: Pants::AVFileDemuxer }
-  ]
-
-  DEFAULT_WRITERS = [
-    { uri_scheme: nil, klass: Pants::FileWriter },
-    { uri_scheme: 'udp', klass: Pants::UDPWriter }
   ]
 
   def self.readers
@@ -37,16 +36,34 @@ class Pants
     @demuxers ||= DEFAULT_DEMUXERS
   end
 
-  def self.writers
-    @writers ||= DEFAULT_WRITERS
+  # @param [URI] uri The URI the Reader is mapped to.
+  #
+  # @return [Pants::Reader] An object of the type that's defined by the URI
+  #   scheme.
+  #
+  # @raise [Pants::Error] If no Reader is mapped to +scheme+.
+  def self.new_reader_from_uri(uri, write_to_channel=nil)
+    reader = if uri.nil?
+      readers.find { |reader| reader[:uri_scheme].nil? }
+    else
+      readers.find { |reader| reader[:uri_scheme] == uri.scheme }
+    end
+
+    unless reader
+      raise ArgumentError, "No reader found with URI scheme: #{uri.scheme}"
+    end
+
+    args = reader[:args].map { |arg| uri.send(arg) }
+
+    reader[:klass].new(*args, write_to_channel)
   end
 
   # Convenience method; doing something like:
   #
   #   pants = Pants.new
-  #   pants.add_reader('udp://0.0.0.0:1234')
-  #   pants.add_writer('udp://1.2.3.4:5999')
-  #   pants.add_writer('udp_data.raw')
+  #   reader = pants.add_reader('udp://0.0.0.0:1234')
+  #   reader.add_writer('udp://1.2.3.4:5999')
+  #   reader.add_writer('udp_data.raw')
   #   pants.run
   #
   # ...becomes:
@@ -67,9 +84,9 @@ class Pants
   # Convenience method; doing something like:
   #
   #   pants = Pants.new
-  #   pants.add_demuxer('my_movie.m4v')
-  #   pants.add_writer('udp://1.2.3.4:5999')
-  #   pants.add_writer('mpeg4_data.raw')
+  #   demuxer = pants.add_demuxer('my_movie.m4v')
+  #   demuxer.add_writer('udp://1.2.3.4:5999')
+  #   demuxer.add_writer('mpeg4_data.raw')
   #   pants.run
   #
   # ...becomes:
@@ -88,87 +105,64 @@ class Pants
     pants.run
   end
 
-  def self.new_reader_from_uri_scheme(scheme, *args)
-    reader = readers.find { |reader| reader[:uri_scheme] == scheme }
-    reader[:klass].new(*args)
-  end
+  attr_reader :readers
 
-  def self.new_writer_from_uri_scheme(scheme, *args)
-    writer = writers.find { |writer| writer[:uri_scheme] == scheme }
-    writer[:klass].new(*args)
-  end
-
-  attr_reader :reader
-  attr_reader :writers
-
-  def initialize
+  def initialize(&block)
     setup_signals
-    @writers = []
-    @data_channel = EM::Channel.new
+    @readers = []
 
-    yield self if block_given?
+    @convenience_block = block
   end
 
   # @param [String] uri_string The URI to the object to read.  Can be a file:///,
   #   udp://, or an empty string for a file.
-  def add_reader(uri_string)
+  #
+  # @param [EventMachine::Channel] write_to_channel Optional custom channel to
+  #   write to.  Readers create their own channel by default, so you don't need
+  #   to give this unless you're getting creative.
+  #
+  # @return [Pants::Reader] The newly created reader.
+  def add_reader(uri_string, write_to_channel=nil)
     begin
       uri = URI(uri_string)
     rescue URI::InvalidURIError
-      @reader = Pants.new_reader_from_uri_scheme(nil, @data_channel, uri_string)
+      @readers << Pants.new_reader_from_uri(nil, write_to_channel)
     else
-      @reader = case uri.scheme
-      when nil
-        Pants.new_reader_from_uri_scheme(nil, @data_channel, uri.path)
-      when 'file'
-        Pants.new_reader_from_uri_scheme(nil, @data_channel, uri.path)
-      when 'udp'
-        Pants.new_reader_from_uri_scheme('udp', @data_channel, uri.host, uri.port)
-      else
-        raise ArgumentError, "Don't know what to do with reader: #{uri}"
-      end
+      @readers << Pants.new_reader_from_uri(uri, write_to_channel)
     end
+
+    if @convenience_block
+      @convenience_block.call(@readers.last)
+    end
+
+    @readers.last
   end
 
   # @param [String] uri_string The URI to the object to read and demux.  Must be
   #   a path to a file.
+  #
+  # @return [Pants::Reader] The newly created reader.
   def add_demuxer(uri_string, stream_id)
-    @reader = Pants::AVFileDemuxer.new(@data_channel, uri_string, stream_id)
-  end
+    @readers << Pants::AVFileDemuxer.new(uri_string, stream_id)
 
-  # @param [String] uri_string The URI to the object to read.  Can be a file:///,
-  #   udp://.
-  def add_writer(uri_string)
-    begin
-      uri = URI(uri_string)
-    rescue URI::InvalidURIError
-      @writers << Pants.new_writer_from_uri_scheme(nil, @data_channel, uri.path)
-    else
-      @writers << case uri.scheme
-      when nil
-        Pants.new_writer_from_uri_scheme(nil, @data_channel, uri.path)
-      when 'file'
-        Pants.new_writer_from_uri_scheme(nil, @data_channel, uri.path)
-      when 'udp'
-        Pants.new_writer_from_uri_scheme('udp', @data_channel, uri.host, uri.port)
-      else
-        raise ArgumentError, "Not sure what to do writer: #{uri}"
-      end
-    end
+    @readers.last
   end
 
   # Starts the EventMachine reactor, the reader and the writers.
   def run
+    raise Pants::Error, "No readers added yet" if @readers.empty?
+
     starter = proc do
       puts "Pants v#{Pants::VERSION}"
-      puts "Starting read on: #{@reader.info}"
-      puts "Writing to #{@writers.size} writers"
+      puts "Reader from #{@readers.size} readers"
 
-      EM.next_tick do
-        @reader.starter.call(@writers)
+      @readers.each_with_index do |reader, i|
+        puts "Reader #{i + 1}:"
+        puts "\tStarting read on: #{reader.info}"
+        puts "\tWriting to #{reader.writers.size} writers"
       end
 
-      @writers.each { |writer| writer.starter.call }
+      @readers.each(&:start)
     end
 
     if EM.reactor_running?
@@ -183,7 +177,7 @@ class Pants
   # Tells the reader to signal to its writers that it's time to finish.
   def stop
     puts "Stop called.  Closing readers and writers..."
-    @reader.finisher.set_deferred_success
+    @readers.each { |reader| reader.finisher.set_deferred_success }
   end
 
   # Stop, then run.
