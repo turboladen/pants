@@ -13,6 +13,34 @@ require_relative 'pants/version'
 class Pants
   include LogSwitch::Mixin
 
+  DEFAULT_READERS = [
+      { uri_scheme: nil, klass: Pants::FileReader },
+      { uri_scheme: 'file', klass: Pants::FileReader },
+      { uri_scheme: 'udp', klass: Pants::UDPReader }
+    ]
+
+  DEFAULT_DEMUXERS = [
+    { uri_scheme: nil, klass: Pants::AVFileDemuxer },
+    { uri_scheme: 'file', klass: Pants::AVFileDemuxer }
+  ]
+
+  DEFAULT_WRITERS = [
+    { uri_scheme: nil, klass: Pants::FileWriter },
+    { uri_scheme: 'udp', klass: Pants::UDPWriter }
+  ]
+
+  def self.readers
+    @readers ||= DEFAULT_READERS
+  end
+
+  def self.demuxers
+    @demuxers ||= DEFAULT_DEMUXERS
+  end
+
+  def self.writers
+    @writers ||= DEFAULT_WRITERS
+  end
+
   # Convenience method; doing something like:
   #
   #   pants = Pants.new
@@ -60,6 +88,16 @@ class Pants
     pants.run
   end
 
+  def self.new_reader_from_uri_scheme(scheme, *args)
+    reader = readers.find { |reader| reader[:uri_scheme] == scheme }
+    reader[:klass].new(*args)
+  end
+
+  def self.new_writer_from_uri_scheme(scheme, *args)
+    writer = writers.find { |writer| writer[:uri_scheme] == scheme }
+    writer[:klass].new(*args)
+  end
+
   attr_reader :reader
   attr_reader :writers
 
@@ -72,28 +110,28 @@ class Pants
   end
 
   # @param [String] uri_string The URI to the object to read.  Can be a file:///,
-  #   udp://.
+  #   udp://, or an empty string for a file.
   def add_reader(uri_string)
     begin
       uri = URI(uri_string)
     rescue URI::InvalidURIError
-      @reader = Pants::FileReader.new(@data_channel, uri_string)
+      @reader = Pants.new_reader_from_uri_scheme(nil, @data_channel, uri_string)
     else
       @reader = case uri.scheme
       when nil
-        Pants::FileReader.new(@data_channel, uri.path)
+        Pants.new_reader_from_uri_scheme(nil, @data_channel, uri.path)
       when 'file'
-        Pants::FileReader.new(@data_channel, uri.path)
+        Pants.new_reader_from_uri_scheme(nil, @data_channel, uri.path)
       when 'udp'
-        Pants::UDPReader.new(@data_channel, uri.host, uri.port)
+        Pants.new_reader_from_uri_scheme('udp', @data_channel, uri.host, uri.port)
       else
         raise ArgumentError, "Don't know what to do with reader: #{uri}"
       end
     end
   end
 
-  # @param [String] uri_string The URI to the object to read and demux.  Can be
-  #   a file:///, udp://.
+  # @param [String] uri_string The URI to the object to read and demux.  Must be
+  #   a path to a file.
   def add_demuxer(uri_string, stream_id)
     @reader = Pants::AVFileDemuxer.new(@data_channel, uri_string, stream_id)
   end
@@ -104,15 +142,15 @@ class Pants
     begin
       uri = URI(uri_string)
     rescue URI::InvalidURIError
-      @writers << Pants::FileWriter.new(@data_channel, uri.path)
+      @writers << Pants.new_writer_from_uri_scheme(nil, @data_channel, uri.path)
     else
       @writers << case uri.scheme
       when nil
-        Pants::FileWriter.new(@data_channel, uri.path)
+        Pants.new_writer_from_uri_scheme(nil, @data_channel, uri.path)
       when 'file'
-        Pants::FileWriter.new(@data_channel, uri.path)
+        Pants.new_writer_from_uri_scheme(nil, @data_channel, uri.path)
       when 'udp'
-        Pants::UDPWriter.new(@data_channel, uri.host, uri.port)
+        Pants.new_writer_from_uri_scheme('udp', @data_channel, uri.host, uri.port)
       else
         raise ArgumentError, "Not sure what to do writer: #{uri}"
       end
