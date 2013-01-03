@@ -68,6 +68,22 @@ describe Pants do
   end
 
   describe "#run" do
+    let(:reader) do
+      r = double "Pants::TestReader"
+      r.stub(:info)
+      r.stub_chain(:writers, :size)
 
+      r
+    end
+
+    before do
+      EM.stub(:run).and_yield
+    end
+
+    it "starts all of the readers" do
+      reader.should_receive(:start)
+      subject.instance_variable_set(:@readers, [reader])
+      subject.run
+    end
   end
 end
