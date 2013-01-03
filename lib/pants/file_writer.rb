@@ -1,19 +1,12 @@
-require 'eventmachine'
-require_relative 'logger'
+require_relative 'base_writer'
 
 
 class Pants
 
   # This is the interface for FileWriterConnections.  It controls starting,
   # stopping, and threading the connection.
-  class FileWriter
+  class FileWriter < BaseWriter
     include LogSwitch::Mixin
-
-    # The block to be called when starting up a new Pants reader.
-    attr_reader :starter
-
-    # The block to be called when the reader is done reading.
-    attr_reader :finisher
 
     # @param [EventMachine::Channel] read_from_channel The channel to read data
     #   from and thus write to file.
@@ -46,6 +39,7 @@ class Pants
       end
 
       @starter.call if EM.reactor_running?
+      super()
     end
   end
 end

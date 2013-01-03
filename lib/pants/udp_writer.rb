@@ -1,6 +1,5 @@
-require 'eventmachine'
 require 'socket'
-require_relative 'logger'
+require_relative 'base_writer'
 require_relative 'network_helpers'
 
 
@@ -74,12 +73,8 @@ class Pants
 
   # This is the interface to UDPWriterConnections.  It defines what happens
   # when you want to start it up and stop it.
-  class UDPWriter
+  class UDPWriter < BaseWriter
     include LogSwitch::Mixin
-
-    attr_reader :starter
-
-    attr_reader :finisher
 
     def initialize(read_from_channel, write_ip, write_port)
       connection = nil
@@ -99,6 +94,7 @@ class Pants
       end
 
       @starter.call if EM.reactor_running?
+      super()
     end
   end
 end
