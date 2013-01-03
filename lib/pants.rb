@@ -1,4 +1,5 @@
 require 'uri'
+require_relative 'pants/av_file_demuxer'
 require_relative 'pants/logger'
 require_relative 'pants/file_reader'
 require_relative 'pants/file_writer'
@@ -12,32 +13,67 @@ require_relative 'pants/version'
 class Pants
   include LogSwitch::Mixin
 
-  # Convenience method for doing:
+  # Convenience method; doing something like:
   #
-  #   pants = Pants.new('udp://0.0.0.0:1234') do |seam|
-  #     # ...
-  #   end
-  #
+  #   pants = Pants.new
+  #   pants.add_reader('udp://0.0.0.0:1234')
+  #   pants.add_writer('udp://1.2.3.4:5999')
+  #   pants.add_writer('udp_data.raw')
   #   pants.run
+  #
+  # ...becomes:
+  #
+  #   Pants.read('udp://0.0.0.1234') do |seam|
+  #     seam.add_writer('udp://1.2.3.4:5999')
+  #     seam.add_writer('udp_data.raw')
+  #   end
   #
   # @param [String] uri Takes a URI ('udp://...' or 'file://...') or the path
   #   to a file.
   def self.read(uri, &block)
-    new(uri, &block).run
+    pants = new(&block)
+    pants.add_reader(uri)
+    pants.run
+  end
+
+  # Convenience method; doing something like:
+  #
+  #   pants = Pants.new
+  #   pants.add_demuxer('my_movie.m4v')
+  #   pants.add_writer('udp://1.2.3.4:5999')
+  #   pants.add_writer('mpeg4_data.raw')
+  #   pants.run
+  #
+  # ...becomes:
+  #
+  #   Pants.demux('my_movie.m4v') do |seam|
+  #     seam.add_writer('udp://1.2.3.4:5999')
+  #     seam.add_writer('mpepg4_data.raw')
+  #   end
+  #
+  # @param [String] uri The path to the file to demux.
+  # @param [Symbol,Fixnum] stream_id The ID of the stream in the file to
+  #   extract.  Can be :video, :audio, or the actual stream index number.
+  def self.demux(uri, stream_id, &block)
+    pants = new(&block)
+    pants.add_demuxer(uri, stream_id)
+    pants.run
   end
 
   attr_reader :reader
   attr_reader :writers
 
-  # @param [String] uri_string The URI to the object to read.  Can be a file:///,
-  #   udp://.
-  def initialize(uri_string)
+  def initialize
     setup_signals
     @writers = []
     @data_channel = EM::Channel.new
 
     yield self if block_given?
+  end
 
+  # @param [String] uri_string The URI to the object to read.  Can be a file:///,
+  #   udp://.
+  def add_reader(uri_string)
     begin
       uri = URI(uri_string)
     rescue URI::InvalidURIError
@@ -54,6 +90,12 @@ class Pants
         raise ArgumentError, "Don't know what to do with reader: #{uri}"
       end
     end
+  end
+
+  # @param [String] uri_string The URI to the object to read and demux.  Can be
+  #   a file:///, udp://.
+  def add_demuxer(uri_string, stream_id)
+    @reader = Pants::AVFileDemuxer.new(@data_channel, uri_string, stream_id)
   end
 
   # @param [String] uri_string The URI to the object to read.  Can be a file:///,
