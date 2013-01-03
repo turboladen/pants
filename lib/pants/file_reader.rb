@@ -10,13 +10,13 @@ class Pants
   class FileReaderConnection < EventMachine::Connection
     include LogSwitch::Mixin
 
-    # @param [EventMachine::Channel] data_channel The data channel to write read
-    #   data to.
+    # @param [EventMachine::Channel] write_to_channel The data channel to write
+    #   read data to.
     #
     # @param [EventMachine::Deferrable] finisher Gets set to succeeded when the
     #   file-to-read has been fully read.
-    def initialize(data_channel, finisher)
-      @data_channel = data_channel
+    def initialize(write_to_channel, finisher)
+      @write_to_channel = write_to_channel
       @finisher = finisher
     end
 
@@ -25,7 +25,7 @@ class Pants
     # @param [String] data The file data to write to the channel.
     def receive_data(data)
       log "<< #{data.size}"
-      @data_channel << data
+      @write_to_channel << data
     end
 
     # Called when the file is done being read.
@@ -41,15 +41,15 @@ class Pants
   class FileReader < BaseReader
     include LogSwitch::Mixin
 
-    # @param [EventMachine::Channel] data_channel The channel to write to, so
-    #   that all writers can do their thing.
+    # @param [EventMachine::Channel] write_to_channel The channel to write to,
+    #   so that all writers can do their thing.
     #
     # @param [String] file_path Path to the file to read.
-    def initialize(data_channel, file_path)
+    def initialize(write_to_channel, file_path)
       super()
 
       @info = file_path
-      init_starter(data_channel, file_path)
+      init_starter(write_to_channel, file_path)
       @starter.call if EM.reactor_running?
     end
 

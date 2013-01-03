@@ -19,15 +19,15 @@ class Pants
     # Packets get split up to this size before writing.
     PACKET_SPLIT_SIZE = 500
 
-    # @param [EventMachine::Channel] data_channel The channel to expect data on
-    #   and write to the socket.
+    # @param [EventMachine::Channel] read_from_channel The channel to expect
+    #   data on and write to the socket.
     #
     # @param [String] dest_ip The IP address to send data to.  Can be unicast or
     #   multicast.
     #
     # @param [Fixnum] dest_port The UDP port to send data to.
-    def initialize(data_channel, dest_ip, dest_port)
-      @data_channel = data_channel
+    def initialize(read_from_channel, dest_ip, dest_port)
+      @read_from_channel = read_from_channel
       @dest_ip = dest_ip
       @dest_port = dest_port
 
@@ -45,7 +45,7 @@ class Pants
     # over the wire), it will split packets into +PACKET_SPLIT_SIZE+ sized
     # packets before sending.
     def post_init
-      @data_channel.subscribe do |data|
+      @read_from_channel.subscribe do |data|
         if data.size > PACKET_SPLIT_THRESHOLD
           log "#{__id__} Got big data: #{data.size}.  Splitting..."
           io = StringIO.new(data)
@@ -81,7 +81,7 @@ class Pants
 
     attr_reader :finisher
 
-    def initialize(data_channel, write_ip, write_port)
+    def initialize(read_from_channel, write_ip, write_port)
       connection = nil
 
       @starter = proc do
@@ -89,7 +89,7 @@ class Pants
 
         EM.defer do
           connection = EM.open_datagram_socket('0.0.0.0', 0, UDPWriterConnection,
-            data_channel, write_ip, write_port)
+            read_from_channel, write_ip, write_port)
         end
       end
 

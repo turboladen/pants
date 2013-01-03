@@ -14,10 +14,10 @@ class Pants
     include LogSwitch::Mixin
     include Pants::NetworkHelpers
 
-    # @param [EventMachine::Channel] data_channel The data channel to write read
-    #   data to.
-    def initialize(data_channel)
-      @data_channel = data_channel
+    # @param [EventMachine::Channel] write_to_channel The data channel to write
+    #   read data to.
+    def initialize(write_to_channel)
+      @write_to_channel = write_to_channel
       port, ip = Socket.unpack_sockaddr_in(get_sockname)
 
       if Addrinfo.ip(ip).ipv4_multicast? || Addrinfo.ip(ip).ipv6_multicast?
@@ -32,7 +32,7 @@ class Pants
     #
     # @param [String] data The socket data to write to the channel.
     def receive_data(data)
-      @data_channel << data
+      @write_to_channel << data
     end
   end
 
@@ -42,17 +42,17 @@ class Pants
   class UDPReader < BaseReader
     include LogSwitch::Mixin
 
-    # @param [EventMachine::Channel] data_channel The channel to write to, so
-    #   that all writers can do their thing.
+    # @param [EventMachine::Channel] write_to_channel The channel to write to,
+    #   so that all writers can do their thing.
     #
     # @param [String] read_ip The IP address to read on.
     #
     # @param [Fixnum] read_port The UDP port to read on.
-    def initialize(data_channel, read_ip, read_port)
+    def initialize(write_to_channel, read_ip, read_port)
       super()
 
       @info = "udp://#{read_ip}:#{read_port}"
-      init_starter(data_channel, read_ip, read_port)
+      init_starter(write_to_channel, read_ip, read_port)
       @starter.call if EM.reactor_running?
     end
 

@@ -15,18 +15,18 @@ class Pants
     # The block to be called when the reader is done reading.
     attr_reader :finisher
 
-    # @param [EventMachine::Channel] data_channel The channel to read data from
-    #   and thus write to file.
+    # @param [EventMachine::Channel] read_from_channel The channel to read data
+    #   from and thus write to file.
     #
     # @param [String] file_path The path to write to.
-    def initialize(data_channel, file_path)
+    def initialize(read_from_channel, file_path)
       file = file_path.is_a?(File) ? file_path : File.open(file_path, 'w')
 
       @starter = proc do
         log "#{__id__} Adding a #{self.class} to write to #{file_path}"
 
         EM.defer do
-          data_channel.subscribe do |data|
+          read_from_channel.subscribe do |data|
             begin
               file.write_nonblock(data)
               log "Wrote normal"
