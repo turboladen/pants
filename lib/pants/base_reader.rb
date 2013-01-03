@@ -1,9 +1,11 @@
 require_relative 'file_writer'
 require_relative 'udp_writer'
+require_relative 'logger'
 
 
 class Pants
   class BaseReader
+    include LogSwitch::Mixin
 
     DEFAULT_WRITER_TYPES = [
       { uri_scheme: nil, klass: Pants::FileWriter, args: [:path] },
@@ -78,8 +80,12 @@ class Pants
       end
     end
 
+    # Starts all of the writers, then starts the reader.  This makes sure the
+    # writers are all running and ready for data before the reader starts
+    # sending data out.
     def start
       EM.next_tick do
+        log "Starter reader..."
         @starter.call
       end
 
