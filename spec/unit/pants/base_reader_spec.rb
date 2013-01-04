@@ -28,6 +28,8 @@ describe Pants::BaseReader do
       before do
         subject.instance_variable_set(:@writers, [test_writer])
         EM.stub(:next_tick).and_yield
+        EM.stub(:tick_loop).and_yield.and_return(tick_loop)
+        EM::Iterator.stub(:new).and_return(iterator)
       end
 
       let(:tick_loop) do
@@ -46,13 +48,9 @@ describe Pants::BaseReader do
       end
 
       it "calls each writer's finisher" do
-        EM.stub(:tick_loop).and_yield.and_return(tick_loop)
         test_writer.should_receive(:running?)
-
         EM.should_receive(:stop_event_loop)
         test_writer.should_receive(:stop)
-
-        EM::Iterator.stub(:new).and_return(iterator)
 
         subject.finisher.set_deferred_success
       end
