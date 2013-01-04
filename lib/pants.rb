@@ -4,7 +4,10 @@ require_relative 'pants/version'
 
 require_relative 'pants/av_file_demuxer'
 require_relative 'pants/file_reader'
+require_relative 'pants/file_writer'
 require_relative 'pants/udp_reader'
+require_relative 'pants/udp_writer'
+require_relative 'pants/tee'
 
 class Pants
   class Error < StandardError
@@ -36,6 +39,15 @@ class Pants
     @demuxers ||= DEFAULT_DEMUXERS
   end
 
+  DEFAULT_WRITERS = [
+    { uri_scheme: nil, klass: Pants::FileWriter, args: [:path] },
+    { uri_scheme: 'udp', klass: Pants::UDPWriter, args: [:host, :port] }
+  ]
+
+  def self.writers
+    @writers ||= DEFAULT_WRITERS
+  end
+
   # @param [URI] uri The URI the Reader is mapped to.
   #
   # @return [Pants::Reader] An object of the type that's defined by the URI
@@ -53,7 +65,27 @@ class Pants
       raise ArgumentError, "No reader found with URI scheme: #{uri.scheme}"
     end
 
-    args = reader[:args].map { |arg| uri.send(arg) }
+    args = if reader[:args]
+      reader[:args].map { |arg| uri.send(arg) }
+    else
+      []
+    end
+
+    reader[:klass].new(*args, write_to_channel)
+  end
+
+  def self.new_reader_from_symbol(symbol, write_to_channel=nil)
+    reader = readers.find { |reader| reader[:uri_scheme] == symbol }
+
+    unless reader
+      raise ArgumentError, "No reader found with URI scheme: #{symbol}"
+    end
+
+    args = if reader[:args]
+      reader[:args].map { |arg| uri.send(arg) }
+    else
+      []
+    end
 
     reader[:klass].new(*args, write_to_channel)
   end
@@ -114,7 +146,7 @@ class Pants
     @convenience_block = block
   end
 
-  # @param [String] uri_string The URI to the object to read.  Can be a file:///,
+  # @param [String] id The URI to the object to read.  Can be a file:///,
   #   udp://, or an empty string for a file.
   #
   # @param [EventMachine::Channel] write_to_channel Optional custom channel to
@@ -122,13 +154,17 @@ class Pants
   #   to give this unless you're getting creative.
   #
   # @return [Pants::Reader] The newly created reader.
-  def add_reader(uri_string, write_to_channel=nil)
-    begin
-      uri = URI(uri_string)
-    rescue URI::InvalidURIError
-      @readers << Pants.new_reader_from_uri(nil, write_to_channel)
-    else
-      @readers << Pants.new_reader_from_uri(uri, write_to_channel)
+  def add_reader(id, write_to_channel=nil)
+    if id.is_a? String
+      begin
+        uri = URI(id)
+      rescue URI::InvalidURIError
+        @readers << Pants.new_reader_from_uri(nil, write_to_channel)
+      else
+        @readers << Pants.new_reader_from_uri(uri, write_to_channel)
+      end
+    elsif id.is_a? Symbol
+      @readers << Pants.new_reader_from_symbol(id, write_to_channel)
     end
 
     if @convenience_block
@@ -144,6 +180,10 @@ class Pants
   # @return [Pants::Reader] The newly created reader.
   def add_demuxer(uri_string, stream_id)
     @readers << Pants::AVFileDemuxer.new(uri_string, stream_id)
+
+    if @convenience_block
+      @convenience_block.call(@readers.last)
+    end
 
     @readers.last
   end

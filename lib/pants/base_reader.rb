@@ -1,5 +1,3 @@
-require_relative 'file_writer'
-require_relative 'udp_writer'
 require_relative 'logger'
 
 
@@ -7,14 +5,6 @@ class Pants
   class BaseReader
     include LogSwitch::Mixin
 
-    DEFAULT_WRITER_TYPES = [
-      { uri_scheme: nil, klass: Pants::FileWriter, args: [:path] },
-      { uri_scheme: 'udp', klass: Pants::UDPWriter, args: [:host, :port] }
-    ]
-
-    def self.writer_types
-      @writer_types ||= DEFAULT_WRITER_TYPES
-    end
 
     # The block to be called when starting up.  Writers should all have been
     # added before calling this; if writers are started after this, they won't
@@ -35,6 +25,7 @@ class Pants
       @writers = []
       @write_to_channel = write_to_channel || EM::Channel.new
       @info = ""
+      init_starter unless @starter
     end
 
     # The callback that gets called when the Reader is done reading.  Tells all
@@ -65,19 +56,7 @@ class Pants
     #
     # @return [Proc] The code that should get called when Pants starts.
     def init_starter
-      warn "<#{self.class}> This should be defined by children."
-    end
-
-    # @param [String] uri_string The URI to the object to read.  Can be a file:///,
-    #   udp://.
-    def add_writer(uri_string)
-      begin
-        uri = URI(uri_string)
-      rescue URI::InvalidURIError
-        @writers << new_writer_from_uri(nil, @write_to_channel)
-      else
-        @writers << new_writer_from_uri(uri, @write_to_channel)
-      end
+      raise Pants::Error, "Readers must define a @starter"
     end
 
     # Starts all of the writers, then starts the reader.  This makes sure the
@@ -93,20 +72,60 @@ class Pants
       @writers.each { |writer| writer.start }
     end
 
+    # @param [String] id The URI to the object to read.  Can be a file:///,
+    #   udp://.
+    #
+    # @return [Pants::Writer] The newly created writer.
+    def add_writer(id)
+      if id.is_a? String
+        begin
+          uri = URI(id)
+        rescue URI::InvalidURIError
+          @writers << new_writer_from_uri(nil, @write_to_channel)
+        else
+          @writers << new_writer_from_uri(uri, @write_to_channel)
+        end
+      else
+        @writers << new_writer_from_symbol(id, @write_to_channel)
+      end
+
+      @writers.last
+    end
+
     private
 
     def new_writer_from_uri(uri, read_from_channel)
       writer = if uri.nil?
-        self.class.writer_types.find { |writer| writer[:uri_scheme].nil? }
+        Pants.writers.find { |writer| writer[:uri_scheme].nil? }
       else
-        self.class.writer_types.find { |writer| writer[:uri_scheme] == uri.scheme }
+        Pants.writers.find { |writer| writer[:uri_scheme] == uri.scheme }
       end
 
       unless writer
         raise ArgumentError, "No writer found wth URI scheme: #{uri.scheme}"
       end
 
-      args = writer[:args].map { |arg| uri.send(arg) }
+      args = if writer[:args]
+        writer[:args].map { |arg| uri.send(arg) }
+      else
+        []
+      end
+
+      writer[:klass].new(*args, read_from_channel)
+    end
+
+    def new_writer_from_symbol(symbol, read_from_channel)
+      writer = Pants.writers.find { |writer| writer[:uri_scheme] == symbol }
+
+      unless writer
+        raise ArgumentError, "No writer found with URI scheme: #{symbol}"
+      end
+
+      args = if writer[:args]
+        writer[:args].map { |arg| uri.send(arg) }
+      else
+        []
+      end
 
       writer[:klass].new(*args, read_from_channel)
     end

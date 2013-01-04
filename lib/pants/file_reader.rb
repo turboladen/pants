@@ -46,11 +46,11 @@ class Pants
     #
     # @param [String] file_path Path to the file to read.
     def initialize(file_path, write_to_channel=nil)
-      super(write_to_channel)
-
       log "file path #{file_path}"
       @info = file_path
       init_starter(file_path)
+      super(write_to_channel)
+
       @starter.call if EM.reactor_running?
     end
 

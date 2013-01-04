@@ -49,10 +49,10 @@ class Pants
     #
     # @param [Fixnum] read_port The UDP port to read on.
     def initialize(read_ip, read_port, write_to_channel=nil)
-      super(write_to_channel)
-
       @info = "udp://#{read_ip}:#{read_port}"
       init_starter(read_ip, read_port)
+      super(write_to_channel)
+
       @starter.call if EM.reactor_running?
     end
 
