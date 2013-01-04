@@ -24,7 +24,7 @@ class Pants
     def initialize(write_to_channel=nil)
       @writers = []
       @write_to_channel = write_to_channel || EM::Channel.new
-      @info = ""
+      @info ||= ""
       init_starter unless @starter
     end
 
@@ -37,14 +37,21 @@ class Pants
       finisher = EM::DefaultDeferrable.new
 
       finisher.callback do
-        log "Got called back after finished reading."
+        log "Got called back after finished reading.  Starting shutdown..."
 
         EM.next_tick do
-          @writers.each do |writer|
-            writer.finisher.call
+          start_loop = EM.tick_loop do
+            if @writers.none?(&:running?)
+              :stop
+            end
           end
+          start_loop.on_stop { EM.stop_event_loop }
 
-          EM.stop_event_loop
+          log "Stopping writers for reader #{self.__id__}"
+          EM::Iterator.new(@writers).each do |writer, iter|
+            writer.stop
+            iter.next
+          end
         end
       end
 
@@ -63,13 +70,18 @@ class Pants
     # writers are all running and ready for data before the reader starts
     # sending data out.
     def start
-      EM.next_tick do
-        log "Starter reader..."
-        @starter.call
+      start_loop = EM.tick_loop do
+        if @writers.all?(&:running?)
+          :stop
+        end
       end
+      start_loop.on_stop { @starter.call }
 
-      log "Starting writers..."
-      @writers.each { |writer| writer.start }
+      log "Starting writers for reader #{self.__id__}..."
+      EM::Iterator.new(@writers).each do |writer, iter|
+        writer.start
+        iter.next
+      end
     end
 
     # @param [String] id The URI to the object to read.  Can be a file:///,

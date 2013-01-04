@@ -12,19 +12,46 @@ class Pants
     # The block to be called when the reader is done reading.
     attr_reader :finisher
 
-    def initialize
-      unless @finisher
-        warn "You haven't defined a finisher--are you sure you're cleaning up?"
-      end
-
-      unless @starter
-        warn "You haven't defined a starter--are you sure this writer does something?"
-      end
+    def initialize(read_from_channel)
+      @running = false
+      @read_from_channel = read_from_channel
+      start if EM.reactor_running?
     end
 
     def start
-      log "Starting..."
-      @starter.call
+      warn "You haven't defined a start method--are you sure this writer does something?"
+    end
+
+    def stop
+      warn "You haven't defined a stop method--are you sure you're cleaning up?"
+    end
+
+    def starter
+      return @starter if @starter
+
+      @starter = EM::DefaultDeferrable.new
+
+      @starter.callback do
+        @running = true
+      end
+
+      @starter
+    end
+
+    def finisher
+      return @finisher if @finisher
+
+      @finisher = EM::DefaultDeferrable.new
+
+      @finisher.callback do
+        @running = false
+      end
+
+      @finisher
+    end
+
+    def running?
+      @running
     end
   end
 end

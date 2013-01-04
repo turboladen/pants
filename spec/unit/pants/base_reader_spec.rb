@@ -7,6 +7,10 @@ describe Pants::BaseReader do
     double "Pants::TestWriter"
   end
 
+  before do
+    Pants::BaseReader.any_instance.stub(:init_starter)
+  end
+
   describe "#initialize" do
     it "creates a write_to_channel if one isn't passed in" do
       reader = Pants::BaseReader.new
@@ -21,22 +25,35 @@ describe Pants::BaseReader do
 
   describe "#finisher" do
     context "when called back with success" do
-      let(:writer) do
-        w = double "Pants::TestWriter"
-        finisher = double "writer finisher"
-        finisher.should_receive(:call)
-        w.should_receive(:finisher).and_return finisher
-
-        w
-      end
-
       before do
-        subject.instance_variable_set(:@writers, [writer])
+        subject.instance_variable_set(:@writers, [test_writer])
         EM.stub(:next_tick).and_yield
       end
 
+      let(:tick_loop) do
+        t = double "EventMachine::TickLoop"
+        t.should_receive(:on_stop).and_yield
+
+        t
+      end
+
+      let(:iterator) do
+        i = double "EventMachine::Iterator"
+        i.should_receive(:each).and_yield(test_writer, i)
+        i.stub(:next)
+
+        i
+      end
+
       it "calls each writer's finisher" do
+        EM.stub(:tick_loop).and_yield.and_return(tick_loop)
+        test_writer.should_receive(:running?)
+
         EM.should_receive(:stop_event_loop)
+        test_writer.should_receive(:stop)
+
+        EM::Iterator.stub(:new).and_return(iterator)
+
         subject.finisher.set_deferred_success
       end
     end

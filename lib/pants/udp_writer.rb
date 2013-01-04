@@ -25,10 +25,11 @@ class Pants
     #   multicast.
     #
     # @param [Fixnum] dest_port The UDP port to send data to.
-    def initialize(read_from_channel, dest_ip, dest_port)
+    def initialize(read_from_channel, starter_deferrable, dest_ip, dest_port)
       @read_from_channel = read_from_channel
       @dest_ip = dest_ip
       @dest_port = dest_port
+      @starter_deferrable = starter_deferrable
 
       if Addrinfo.ip(@dest_ip).ipv4_multicast? || Addrinfo.ip(@dest_ip).ipv6_multicast?
         log "Got a multicast address: #{@dest_ip}:#{@dest_port}"
@@ -60,9 +61,12 @@ class Pants
             io.close
           end
         else
+          log "Sending data to #{@dest_ip}:#{@dest_port}"
           send_datagram(data, @dest_ip, @dest_port)
         end
       end
+
+      @starter_deferrable.succeed
     end
 
     def receive_data(data)
@@ -77,24 +81,26 @@ class Pants
     include LogSwitch::Mixin
 
     def initialize(write_ip, write_port, read_from_channel)
-      connection = nil
+      @write_ip = write_ip
+      @write_port = write_port
+      @connection = nil
 
-      @starter = proc do
-        log "#{__id__} Adding a #{self.class} at #{write_ip}:#{write_port}..."
+      super(read_from_channel)
+    end
 
-        EM.defer do
-          connection = EM.open_datagram_socket('0.0.0.0', 0, UDPWriterConnection,
-            read_from_channel, write_ip, write_port)
-        end
+    def start
+      log "#{__id__} Adding a #{self.class} at #{@write_ip}:#{@write_port}..."
+
+      EM.defer do
+        @connection = EM.open_datagram_socket('0.0.0.0', 0, UDPWriterConnection,
+          @read_from_channel, starter, @write_ip, @write_port)
       end
+    end
 
-      @finisher = proc do
-        log "Finishing ID #{__id__}"
-        connection.close_connection_after_writing
-      end
-
-      @starter.call if EM.reactor_running?
-      super()
+    def stop
+      log "Finishing ID #{__id__}"
+      @connection.close_connection_after_writing
+      finisher.succeed
     end
   end
 end
