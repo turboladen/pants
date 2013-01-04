@@ -76,8 +76,17 @@ describe Pants do
       r
     end
 
+    let(:iterator) do
+      i = double "EventMachine::Iterator"
+      i.should_receive(:each).and_yield(reader, i)
+      i.stub(:next)
+
+      i
+    end
+
     before do
       EM.stub(:run).and_yield
+      EM::Iterator.stub(:new).and_return(iterator)
     end
 
     it "starts all of the readers" do
