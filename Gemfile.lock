@@ -1,6 +1,6 @@
 GIT
-  remote: https://github.com/turboladen/effer
-  revision: e5903510aaab08127116d69f7ed0bcbb4accb3c0
+  remote: git://github.com/turboladen/effer.git
+  revision: 3eaf84fddaad3d55f54f755adcf23f66f46e29e0
   specs:
     effer (0.1.0)
       ffi (>= 1.2.0)
