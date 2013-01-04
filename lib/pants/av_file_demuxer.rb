@@ -3,7 +3,6 @@ require_relative 'base_reader'
 require_relative 'logger'
 
 require 'effer/file_reader'
-require 'ffi/libc'
 
 
 class Pants
@@ -18,10 +17,10 @@ class Pants
     #
     # @param [String] file_path Path to the file to read.
     def initialize(file_path, stream, write_to_channel=nil)
-      super(write_to_channel)
-
       @info = "#{file_path}:#{stream}"
       init_starter(file_path, stream)
+      super(write_to_channel)
+
       @starter.call if EM.reactor_running?
     end
 
@@ -36,8 +35,7 @@ class Pants
     def init_starter(file_path, stream)
       reader = Effer::FileReader.new(file_path)
 
-      @starter = proc do |writers|
-        @writers = writers
+      @starter = proc do
         log "Opening and adding file at #{file_path}..."
 
         reader.dump_format
@@ -45,7 +43,9 @@ class Pants
         abort "No video stream found" unless video_stream
 
         EM.next_tick do
-          video_stream.each_packet do |packet|
+          callback = proc { finisher.succeed }
+
+          video_stream.each_packet(callback) do |packet|
             @write_to_channel << packet[:data].read_string(packet[:size])
           end
         end

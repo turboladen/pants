@@ -1,5 +1,6 @@
 require 'eventmachine'
 require_relative 'logger'
+require_relative 'tee'
 
 
 class Pants
