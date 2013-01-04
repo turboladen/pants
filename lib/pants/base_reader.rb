@@ -88,7 +88,7 @@ class Pants
     #   udp://.
     #
     # @return [Pants::Writer] The newly created writer.
-    def add_writer(id)
+    def add_writer(id, *args)
       if id.is_a? String
         begin
           uri = URI(id)
@@ -98,7 +98,7 @@ class Pants
           @writers << new_writer_from_uri(uri, @write_to_channel)
         end
       else
-        @writers << new_writer_from_symbol(id, @write_to_channel)
+        @writers << new_writer_from_symbol(id, *args, @write_to_channel)
       end
 
       @writers.last
@@ -126,17 +126,11 @@ class Pants
       writer[:klass].new(*args, read_from_channel)
     end
 
-    def new_writer_from_symbol(symbol, read_from_channel)
+    def new_writer_from_symbol(symbol, *args, read_from_channel)
       writer = Pants.writers.find { |writer| writer[:uri_scheme] == symbol }
 
       unless writer
         raise ArgumentError, "No writer found with URI scheme: #{symbol}"
-      end
-
-      args = if writer[:args]
-        writer[:args].map { |arg| uri.send(arg) }
-      else
-        []
       end
 
       writer[:klass].new(*args, read_from_channel)
