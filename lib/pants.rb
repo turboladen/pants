@@ -202,7 +202,10 @@ class Pants
         puts "\tWriting to #{reader.writers.size} writers"
       end
 
-      @readers.each(&:start)
+      EM::Iterator.new(@readers).each do |reader, iter|
+        reader.start
+        iter.next
+      end
     end
 
     if EM.reactor_running?
