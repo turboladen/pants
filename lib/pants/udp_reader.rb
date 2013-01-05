@@ -16,8 +16,9 @@ class Pants
 
     # @param [EventMachine::Channel] write_to_channel The data channel to write
     #   read data to.
-    def initialize(write_to_channel)
+    def initialize(write_to_channel, starter_deferrable)
       @write_to_channel = write_to_channel
+      @starter_deferrable = starter_deferrable
       port, ip = Socket.unpack_sockaddr_in(get_sockname)
 
       if Addrinfo.ip(ip).ipv4_multicast? || Addrinfo.ip(ip).ipv6_multicast?
@@ -26,6 +27,10 @@ class Pants
       else
         log "Got a unicast address: #{ip}:#{port}"
       end
+    end
+
+    def post_init
+      @starter_deferrable.suceeded
     end
 
     # Reads the data and writes it to the data channel.
@@ -42,34 +47,31 @@ class Pants
   class UDPReader < BaseReader
     include LogSwitch::Mixin
 
-    # @param [EventMachine::Channel] write_to_channel The channel to write to,
-    #   so that all writers can do their thing.
-    #
     # @param [String] read_ip The IP address to read on.
     #
     # @param [Fixnum] read_port The UDP port to read on.
-    def initialize(read_ip, read_port, write_to_channel=nil)
+    #
+    # @param [EventMachine::Callback] main_callback The Callback that will get
+    #   called when #finisher is called.  Since there is no clear end to when
+    #   to stop reading this I/O, #finisher is never called internally; it must
+    #   be called externally.
+    def initialize(read_ip, read_port, main_callback)
       @info = "udp://#{read_ip}:#{read_port}"
-      init_starter(read_ip, read_port)
-      super(write_to_channel)
+      @read_ip = read_ip
+      @read_port = read_port
 
-      @starter.call if EM.reactor_running?
+      super(main_callback)
     end
 
-    private
-
-    # @param [EventMachine::Channel] data_channel The channel to write to, so
-    #   that all writers can do their thing.
-    #
-    # @param [String] read_ip The IP address to read on.
-    #
-    # @param [Fixnum] read_port The UDP port to read on.
-    def init_starter(read_ip, read_port)
-      @starter = proc do
-        log "Adding a #{self.class} at #{read_ip}:#{read_port}..."
-        EM.open_datagram_socket(read_ip, read_port, UDPReaderConnection,
-          @write_to_channel)
+    # Starts reading on the UDP IP and port and pushing packets to the channel.
+    def start
+      callback = EM.Callback do
+        log "Adding a #{self.class} at #{@read_ip}:#{@read_port}..."
+        EM.open_datagram_socket(@read_ip, @read_port, UDPReaderConnection,
+          @write_to_channel, starter)
       end
+
+      super(callback)
     end
   end
 end

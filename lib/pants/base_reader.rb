@@ -21,67 +21,57 @@ class Pants
 
     attr_reader :write_to_channel
 
-    def initialize(write_to_channel=nil)
+    # @param [EventMachine::Callback] main_callback This gets called when all
+    #   reading is done and the writers have written out all their data.  It
+    #   signals to the caller that the job of the reader is all done.  For
+    #   first level readers (readers that are not Tees), this lets Pants check
+    #   all existing Readers to see if they're done, so it can know when to stop
+    #   the reactor.
+    #
+    def initialize(main_callback)
       @writers = []
-      @write_to_channel = write_to_channel || EM::Channel.new
+      @write_to_channel = EM::Channel.new
+      @main_callback = main_callback
       @info ||= ""
-      init_starter unless @starter
+      @running = false
+
+      start(main_callback) if EM.reactor_running?
     end
 
-    # The callback that gets called when the Reader is done reading.  Tells all
-    # of the associated writers to finish up.
+    # Starts all of the writers, then starts the reader.  Child readers must
+    # call this to make sure the writers are all running and ready for data
+    # before the reader starts pushing data onto its Channel.
     #
-    # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
-    #   called by any Reader when it's done reading.
-    def finisher
-      finisher = EM::DefaultDeferrable.new
-
-      finisher.callback do
-        log "Got called back after finished reading.  Starting shutdown..."
-
-        EM.next_tick do
-          start_loop = EM.tick_loop do
-            if @writers.none?(&:running?)
-              :stop
-            end
-          end
-          start_loop.on_stop { EM.stop_event_loop }
-
-          log "Stopping writers for reader #{self.__id__}"
-          EM::Iterator.new(@writers).each do |writer, iter|
-            writer.stop
-            iter.next
-          end
-        end
-      end
-
-      finisher
-    end
-
-    # Children should define this to say what should happen when Pants starts
-    # running.
-    #
-    # @return [Proc] The code that should get called when Pants starts.
-    def init_starter
-      raise Pants::Error, "Readers must define a @starter"
-    end
-
-    # Starts all of the writers, then starts the reader.  This makes sure the
-    # writers are all running and ready for data before the reader starts
-    # sending data out.
-    def start
+    # @param [EventMachine::Callback] callback Once all writers are up and
+    #   running, this gets called, letting the caller know all Writers are up
+    #   and running.  This should contain all code that the child Reader wants
+    #   to execute on start.
+    def start(callback)
       start_loop = EM.tick_loop do
-        if @writers.all?(&:running?)
+        if @writers.empty? || @writers.all?(&:running?)
           :stop
         end
       end
-      start_loop.on_stop { @starter.call }
+      start_loop.on_stop { callback.call }
 
       log "Starting writers for reader #{self.__id__}..."
       EM::Iterator.new(@writers).each do |writer, iter|
         writer.start
         iter.next
       end
+    end
+
+    # Calls the reader's #finisher, thus forcing the reader to shutdown.  For
+    # readers that intend to read a finite amount of data, the Reader should
+    # call the #finisher when it's done; for readers that read a non-stop stream
+    # (i.e. like an open socket), this gets called by OS signals (i.e. if you
+    # ctrl-c).
+    def stop!
+      finisher.succeed
+    end
+
+    def running?
+      @running
     end
 
     # @param [String] id The URI to the object to read.  Can be a file:///,
@@ -104,8 +94,75 @@ class Pants
       @writers.last
     end
 
+    #---------------------------------------------------------------------------
+    # Protecteds
+    #---------------------------------------------------------------------------
+    protected
+
+    # This is used internally by child Readers to signal that they're up and
+    # running.  If implementing your own Reader, make sure to call this.
+    def starter
+      return @starter if @starter
+
+      @starter = EM::DefaultDeferrable.new
+
+      @starter.callback do
+        @running = true
+      end
+
+      @starter
+    end
+
+    # The callback that gets called when the Reader is done reading.  Tells all
+    # of the associated writers to finish up.
+    #
+    # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
+    #   called by any Reader when it's done reading.
+    def finisher
+      return @finisher if @finisher
+
+      @finisher = EM::DefaultDeferrable.new
+
+      @finisher.callback do
+        log "Got called back after finished reading.  Starting shutdown..."
+
+        # remove this next_tick?
+        EM.next_tick do
+          start_loop = EM.tick_loop do
+            if @writers.empty? || @writers.none?(&:running?)
+              :stop
+            end
+          end
+
+          start_loop.on_stop do
+            @running = false
+            @main_callback.call
+          end
+
+          log "Stopping writers for reader #{self.__id__}"
+          EM::Iterator.new(@writers).each do |writer, iter|
+            writer.stop
+            iter.next
+          end
+        end
+      end
+
+      @finisher
+    end
+
+    #---------------------------------------------------------------------------
+    # Privates
+    #---------------------------------------------------------------------------
     private
 
+    # Creates a Writer based on the mapping defined in Pants.writers.
+    #
+    # @param [URI] uri The URI that defines the Writer.
+    # @param [EventMachine::Channel] read_from_channel The channel that the
+    #   Writer will read from.
+    # @return [Pants::Writer] The newly created Writer.
+    # @raise [ArgumentError] If Pants.writers doesn't contain a mapping for the
+    #   URI to a Writer class.
     def new_writer_from_uri(uri, read_from_channel)
       writer = if uri.nil?
         Pants.writers.find { |writer| writer[:uri_scheme].nil? }
@@ -126,6 +183,14 @@ class Pants
       writer[:klass].new(*args, read_from_channel)
     end
 
+    # Creates a Writer based on the mapping defined in Pants.writers.
+    #
+    # @param [Symbol] symbol The Symbol that defines the Writer.
+    # @param [EventMachine::Channel] read_from_channel The channel that the
+    #   Writer will read from.
+    # @return [Pants::Writer] The newly created Writer.
+    # @raise [ArgumentError] If Pants.writers doesn't contain a mapping for the
+    #   URI to a Writer class.
     def new_writer_from_symbol(symbol, *args, read_from_channel)
       writer = Pants.writers.find { |writer| writer[:uri_scheme] == symbol }
 

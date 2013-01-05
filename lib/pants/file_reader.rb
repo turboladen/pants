@@ -15,9 +15,14 @@ class Pants
     #
     # @param [EventMachine::Deferrable] finisher Gets set to succeeded when the
     #   file-to-read has been fully read.
-    def initialize(write_to_channel, finisher)
+    def initialize(write_to_channel, starter, finisher)
       @write_to_channel = write_to_channel
       @finisher = finisher
+      @starter = starter
+    end
+
+    def post_init
+      @starter.succeed
     end
 
     # Reads the data and writes it to the data channel.
@@ -41,35 +46,28 @@ class Pants
   class FileReader < BaseReader
     include LogSwitch::Mixin
 
-    # @param [EventMachine::Channel] write_to_channel The channel to write to,
-    #   so that all writers can do their thing.
-    #
     # @param [String] file_path Path to the file to read.
-    def initialize(file_path, write_to_channel=nil)
+    #
+    # @param [EventMachine::Callback] main_callback The Callback that will get
+    #   called when #finisher is called.  #finisher is called when the whole
+    #   file has been read and pushed to the channel.
+    def initialize(file_path, main_callback)
       log "file path #{file_path}"
       @info = file_path
-      init_starter(file_path)
-      super(write_to_channel)
+      @file_path = file_path
 
-      @starter.call if EM.reactor_running?
+      super(main_callback)
     end
 
-    private
-
-    # Associates the list of writers (that should have already been created
-    # already), opens the file, and starts reading it.
-    #
-    # @param [String] file_path The path to the file to read.
-    #
-    # @return [Proc] The code that should get called when Pants starts.
-    def init_starter(file_path)
-      log "Opening file '#{file_path}'"
-      file = File.open(file_path, 'r')
-
-      @starter = proc do
-        log "Opening and adding file at #{file_path}..."
-        EM.attach(file, FileReaderConnection, @write_to_channel, finisher)
+    # Starts reading the file after all writers have been started.
+    def start
+      callback = EM.Callback do
+        log "Opening and adding file at #{@file_path}..."
+        file = File.open(@file_path, 'r')
+        EM.attach(file, FileReaderConnection, @write_to_channel, starter, finisher)
       end
+
+      super(callback)
     end
   end
 end

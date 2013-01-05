@@ -54,7 +54,7 @@ class Pants
   #   scheme.
   #
   # @raise [Pants::Error] If no Reader is mapped to +scheme+.
-  def self.new_reader_from_uri(uri, write_to_channel=nil)
+  def self.new_reader_from_uri(uri, callback)
     reader = if uri.nil?
       readers.find { |reader| reader[:uri_scheme].nil? }
     else
@@ -71,10 +71,10 @@ class Pants
       []
     end
 
-    reader[:klass].new(*args, write_to_channel)
+    reader[:klass].new(*args, callback)
   end
 
-  def self.new_reader_from_symbol(symbol, write_to_channel=nil)
+  def self.new_reader_from_symbol(symbol, callback)
     reader = readers.find { |reader| reader[:uri_scheme] == symbol }
 
     unless reader
@@ -87,7 +87,7 @@ class Pants
       []
     end
 
-    reader[:klass].new(*args, write_to_channel)
+    reader[:klass].new(*args, callback)
   end
 
   # Convenience method; doing something like:
@@ -149,22 +149,24 @@ class Pants
   # @param [String] id The URI to the object to read.  Can be a file:///,
   #   udp://, or an empty string for a file.
   #
-  # @param [EventMachine::Channel] write_to_channel Optional custom channel to
-  #   write to.  Readers create their own channel by default, so you don't need
-  #   to give this unless you're getting creative.
-  #
   # @return [Pants::Reader] The newly created reader.
-  def add_reader(id, write_to_channel=nil)
+  def add_reader(id)
+    callback = EM.Callback do
+      if @readers.none?(&:running?)
+         EM.stop_event_loop
+      end
+    end
+
     if id.is_a? String
       begin
         uri = URI(id)
       rescue URI::InvalidURIError
-        @readers << Pants.new_reader_from_uri(nil, write_to_channel)
+        @readers << Pants.new_reader_from_uri(nil, callback)
       else
-        @readers << Pants.new_reader_from_uri(uri, write_to_channel)
+        @readers << Pants.new_reader_from_uri(uri, callback)
       end
     elsif id.is_a? Symbol
-      @readers << Pants.new_reader_from_symbol(id, write_to_channel)
+      @readers << Pants.new_reader_from_symbol(id, callback)
     end
 
     if @convenience_block
@@ -179,7 +181,13 @@ class Pants
   #
   # @return [Pants::Reader] The newly created reader.
   def add_demuxer(uri_string, stream_id)
-    @readers << Pants::AVFileDemuxer.new(uri_string, stream_id)
+    callback = EM.Callback do
+      if @readers.none?(&:running?)
+        EM.stop_event_loop
+      end
+    end
+
+    @readers << Pants::AVFileDemuxer.new(uri_string, stream_id, callback)
 
     if @convenience_block
       @convenience_block.call(@readers.last)

@@ -11,15 +11,14 @@ describe Pants::BaseReader do
     Pants::BaseReader.any_instance.stub(:init_starter)
   end
 
+  let(:callback) { double "EM.Callback" }
+
+  subject { Pants::BaseReader.new(callback) }
+
   describe "#initialize" do
     it "creates a write_to_channel if one isn't passed in" do
-      reader = Pants::BaseReader.new
+      reader = Pants::BaseReader.new(callback)
       reader.write_to_channel.should be_a EM::Channel
-    end
-
-    it "does not create a write_to_channel if one is passed in" do
-      reader = Pants::BaseReader.new('fake channel')
-      reader.write_to_channel.should == 'fake channel'
     end
   end
 
@@ -47,12 +46,12 @@ describe Pants::BaseReader do
         i
       end
 
-      it "calls each writer's finisher" do
+      it "calls each writer's finisher and the main callback" do
+        callback.should_receive(:call)
         test_writer.should_receive(:running?)
-        EM.should_receive(:stop_event_loop)
         test_writer.should_receive(:stop)
 
-        subject.finisher.set_deferred_success
+        subject.send(:finisher).set_deferred_success
       end
     end
   end

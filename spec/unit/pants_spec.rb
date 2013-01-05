@@ -3,6 +3,8 @@ require "pants"
 
 
 describe Pants do
+  let(:callback) { double "EM.Callback" }
+
   describe ".new_reader_from_uri" do
     context "uri_scheme exists in readers" do
       let(:test_reader) do
@@ -19,9 +21,9 @@ describe Pants do
 
       it "creates a new Reader based on the scheme mapping" do
         uri = URI "test://testhost"
-        test_reader.should_receive(:new).with("testhost", nil)
+        test_reader.should_receive(:new).with("testhost", callback)
 
-        Pants.new_reader_from_uri(uri)
+        Pants.new_reader_from_uri(uri, callback)
       end
     end
 
@@ -30,7 +32,7 @@ describe Pants do
         uri = URI "bobo://host:1234/path"
 
         expect {
-          Pants.new_reader_from_uri(uri)
+          Pants.new_reader_from_uri(uri, callback)
         }.to raise_error(ArgumentError)
       end
     end
@@ -60,8 +62,11 @@ describe Pants do
 
       it "creates the new reader and adds it to @readers" do
         uri = URI "test://somehost"
-        Pants.should_receive(:new_reader_from_uri).with(uri, nil).
-          and_return test_reader
+        Pants.should_receive(:new_reader_from_uri) do |arg1, arg2|
+          arg1.should == uri
+          arg2.should be_a EM.Callback
+        end.and_return(test_reader)
+
         subject.add_reader('test://somehost')
       end
     end
