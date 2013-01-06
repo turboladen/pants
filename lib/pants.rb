@@ -1,6 +1,7 @@
 require 'uri'
 require_relative 'pants/logger'
 require_relative 'pants/version'
+require_relative 'pants/error'
 
 require_relative 'pants/av_file_demuxer'
 require_relative 'pants/file_reader'
@@ -9,11 +10,6 @@ require_relative 'pants/udp_reader'
 require_relative 'pants/udp_writer'
 require_relative 'pants/tee'
 
-class Pants
-  class Error < StandardError
-
-  end
-end
 
 # Pants sort of mimics Linux's +splice+ command/call by taking a reader (the input) and
 # redirects it to multiple writers (the outputs).
