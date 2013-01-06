@@ -3,11 +3,8 @@ require_relative 'pants/logger'
 require_relative 'pants/version'
 require_relative 'pants/error'
 
-require_relative 'pants/av_file_demuxer'
-require_relative 'pants/file_reader'
-require_relative 'pants/file_writer'
-require_relative 'pants/udp_reader'
-require_relative 'pants/udp_writer'
+Dir[File.dirname(__FILE__) + "/pants/readers/*.rb"].each { |f| require f }
+Dir[File.dirname(__FILE__) + "/pants/writers/*.rb"].each { |f| require f }
 require_relative 'pants/tee'
 
 
@@ -17,14 +14,14 @@ class Pants
   include LogSwitch::Mixin
 
   DEFAULT_READERS = [
-      { uri_scheme: nil, klass: Pants::FileReader, args: [:path] },
-      { uri_scheme: 'file', klass: Pants::FileReader, args: [:path] },
-      { uri_scheme: 'udp', klass: Pants::UDPReader, args: [:host, :port] }
+      { uri_scheme: nil, klass: Pants::Readers::FileReader, args: [:path] },
+      { uri_scheme: 'file', klass: Pants::Readers::FileReader, args: [:path] },
+      { uri_scheme: 'udp', klass: Pants::Readers::UDPReader, args: [:host, :port] }
     ]
 
   DEFAULT_DEMUXERS = [
-    { uri_scheme: nil, klass: Pants::AVFileDemuxer },
-    { uri_scheme: 'file', klass: Pants::AVFileDemuxer }
+    { uri_scheme: nil, klass: Pants::Readers::AVFileDemuxer },
+    { uri_scheme: 'file', klass: Pants::Readers::AVFileDemuxer }
   ]
 
   def self.readers
@@ -36,8 +33,8 @@ class Pants
   end
 
   DEFAULT_WRITERS = [
-    { uri_scheme: nil, klass: Pants::FileWriter, args: [:path] },
-    { uri_scheme: 'udp', klass: Pants::UDPWriter, args: [:host, :port] }
+    { uri_scheme: nil, klass: Pants::Writers::FileWriter, args: [:path] },
+    { uri_scheme: 'udp', klass: Pants::Writers::UDPWriter, args: [:host, :port] }
   ]
 
   def self.writers

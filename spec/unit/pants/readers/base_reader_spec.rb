@@ -1,23 +1,23 @@
 require 'spec_helper'
-require 'pants/base_reader'
+require 'pants/readers/base_reader'
 
 
-describe Pants::BaseReader do
+describe Pants::Readers::BaseReader do
   let(:test_writer) do
     double "Pants::TestWriter"
   end
 
   before do
-    Pants::BaseReader.any_instance.stub(:init_starter)
+    Pants::Readers::BaseReader.any_instance.stub(:init_starter)
   end
 
   let(:callback) { double "EM.Callback" }
 
-  subject { Pants::BaseReader.new(callback) }
+  subject { Pants::Readers::BaseReader.new(callback) }
 
   describe "#initialize" do
     it "creates a write_to_channel if one isn't passed in" do
-      reader = Pants::BaseReader.new(callback)
+      reader = Pants::Readers::BaseReader.new(callback)
       reader.write_to_channel.should be_a EM::Channel
     end
   end
