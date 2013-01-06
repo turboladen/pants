@@ -22,6 +22,8 @@ class Pants
 
       attr_reader :write_to_channel
 
+      attr_reader :main_callback
+
       # @param [EventMachine::Callback] main_callback This gets called when all
       #   reading is done and the writers have written out all their data.  It
       #   signals to the caller that the job of the reader is all done.  For
@@ -91,6 +93,12 @@ class Pants
         else
           @writers << new_writer_from_symbol(id, *args, @write_to_channel)
         end
+
+        @writers.last
+      end
+
+      def add_seam(klass, *args)
+        @writers << klass.new(@main_callback, @write_to_channel, *args)
 
         @writers.last
       end

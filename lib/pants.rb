@@ -1,6 +1,8 @@
 require_relative 'pants/core'
 require_relative 'pants/version'
-
+Dir[File.dirname(__FILE__) + "/readers/*.rb"].each { |f| require f }
+Dir[File.dirname(__FILE__) + "/writers/*.rb"].each { |f| require f }
+require_relative 'pants/seam'
 
 # Pants sort of mimics Linux's +splice+ command/call by taking a reader (the input) and
 # redirects it to multiple writers (the outputs).

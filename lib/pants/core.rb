@@ -5,7 +5,7 @@ require_relative 'logger'
 
 Dir[File.dirname(__FILE__) + "/readers/*.rb"].each { |f| require f }
 Dir[File.dirname(__FILE__) + "/writers/*.rb"].each { |f| require f }
-require_relative 'tee'
+require_relative 'seam'
 
 
 class Pants

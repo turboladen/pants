@@ -42,7 +42,12 @@ class Pants
             end
           end
 
-          starter.succeed
+          start_loop = EM.tick_loop do
+            unless @file.closed?
+              :stop
+            end
+          end
+          start_loop.on_stop { starter.succeed }
         end
       end
     end
