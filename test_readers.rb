@@ -3,13 +3,13 @@ require_relative './lib/pants'
 
 Pants.log = true
 
-EM.threadpool_size = 200
+#EM.threadpool_size = 200
 #EM.kqueue
 #EM.epoll
 
 orig_file = 'spec/support/pants.wav'
 dest_file = 'dest_test_file'
-#Pants.read('udp://0.0.0.0:1234') do |reader|
+#Pants.read('udp://127.0.0.1:1234') do |reader|
 Pants.read(orig_file) do |reader|
   1.times do |i|
     reader.add_writer(dest_file)
