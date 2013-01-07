@@ -32,18 +32,31 @@ class Pants
       starter.succeed
     end
 
+    # Make sure you call this (with super()) in your child to ensure read and
+    # write queues are flushed.
     def stop
       log "Stopping..."
       log "receives #{@receives}"
       log "reads #{@reads}"
       log "writes #{@writes}"
       log "sends #{@sends}"
-      finisher.succeed
+
+      finish_loop = EM.tick_loop do
+        if @read_queue.empty? && @write_queue.empty?
+          :stop
+        end
+      end
+
+      finish_loop.on_stop { finisher.succeed }
     end
 
+    # Call this to read data that was put into the read queue.  It yields one
+    # "item" (however the data was put onto the queue) at a time.  It will
+    # continually yield as there is data that comes in on the queue.
+    #
+    # @yield [item] Gives one item off the read queue.
     def read
       processor = proc do |item|
-        puts "Got item of size #{item.size}"
         yield item
         @reads += item.size
         @read_queue.pop(&processor)
@@ -52,36 +65,19 @@ class Pants
       @read_queue.pop(&processor)
     end
 
+    # Call this after your Seam child has processed data and is ready to send it
+    # to its writers.
+    #
+    # @param [Object] data
     def write(data)
       @write_queue << data
       @writes += data.size
-    end
-
-    def finisher
-      return @seam_finisher if @seam_finisher
-
-      @seam_finisher = EM::DefaultDeferrable.new
-
-      @seam_finisher.callback do
-        super_finisher = super
-
-        finish_loop = EM.tick_loop do
-          if @read_queue.empty? && @write_queue.empty?
-            :stop
-          end
-        end
-
-        finish_loop.on_stop { super_finisher.succeed }
-      end
-
-      @seam_finisher
     end
 
     private
 
     def send_data
       processor = proc do |data|
-        puts "Sending item of size #{data.size}"
         @write_to_channel << data
         @sends += data.size
         @write_queue.pop(&processor)

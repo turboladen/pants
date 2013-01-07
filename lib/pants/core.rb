@@ -63,7 +63,7 @@ class Pants
         end
       end
 
-      @readers << Pants::AVFileDemuxer.new(uri_string, stream_id, callback)
+      @readers << Pants::Readers::AVFileDemuxer.new(uri_string, stream_id, callback)
 
       if @convenience_block
         @convenience_block.call(@readers.last)
