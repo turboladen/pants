@@ -26,11 +26,10 @@ class Pants
       #   multicast.
       #
       # @param [Fixnum] dest_port The UDP port to send data to.
-      def initialize(read_from_channel, starter_deferrable, dest_ip, dest_port)
+      def initialize(read_from_channel, dest_ip, dest_port)
         @read_from_channel = read_from_channel
         @dest_ip = dest_ip
         @dest_port = dest_port
-        @starter_deferrable = starter_deferrable
 
         if Addrinfo.ip(@dest_ip).ipv4_multicast? || Addrinfo.ip(@dest_ip).ipv6_multicast?
           log "Got a multicast address: #{@dest_ip}:#{@dest_port}"
@@ -66,8 +65,6 @@ class Pants
             send_datagram(data, @dest_ip, @dest_port)
           end
         end
-
-        @starter_deferrable.succeed
       end
 
       def receive_data(data)
@@ -94,7 +91,14 @@ class Pants
 
         EM.defer do
           @connection = EM.open_datagram_socket('0.0.0.0', 0, UDPWriterConnection,
-            @read_from_channel, starter, @write_ip, @write_port)
+            @read_from_channel, @write_ip, @write_port)
+
+          start_loop = EM.tick_loop do
+            if @connection
+              :stop
+            end
+          end
+          start_loop.on_stop { starter.succeed }
         end
       end
 
@@ -105,5 +109,4 @@ class Pants
       end
     end
   end
-
 end
