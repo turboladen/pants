@@ -14,11 +14,46 @@ tee).
 == FEATURES/PROBLEMS:
 
 All readers can write to any other writer:
-* Read/write UDP unicast data
-* Read/write UDP multicast data
+* Read/write UDP unicast as packets
+* Read/write UDP multicast as packets
 * Read/write Files
+* Demux A/V files
 * Pluggable: write your own reader or writer
 
+=== Concept & Advantage to Pants
+
+The core concept of pants is that without using threads and system calls, it's
+difficult to duplicate data.  Pants uses "readers" to read data from a source,
+then packetize it in some form that "writers" can consume and use for their
+individual needs.  These readers and writers are similar to read and write ends
+of a *nix pipe, but with pants the write end to the pipe can be more than one.
+
+Next, pants also uses "seams" to act as a middle-man for readers and writers.  A
+seam is just like another reader, but it can read from other readers.  Seams are
+primarily useful for doing something to the data from a reader before passing it
+on to writers.  For example, the {rtp}[https://github.com/turboladen/rtp] gem
+is responsible for (amongst other things) pulling a A/V stream out of an A/V
+file, making sure those chunks of data (A/V frames) are sized well for sending
+out via UDP, then adding some headers to each on of those chunks (packets), then
+actually sending each of those packets to some number of UDP endpoints.  To do
+this with pants, it would:
+
+  * Use a reader to read the A/V stream in the file
+  * Use a seam to accept the A/V stream data chunks, make sure the chunks are
+    sized right, then add an RTP header to each chunk
+  * Use a writer to read from the seam and send the data out to a UDP IP/port
+
+If you plan to do the above for just one UDP client, the benefits of pants might
+not quite shine through (although it will do this quite quickly, and only in a
+maybe three lines of code); if you intend to be sending the RTP-encoded data to
+a number of UDP clients though, pants shines in that you will have only had to
+spend system resources for reading the file once and encoding the data (which
+can be an expensive operation) once before sending it out over the network to
+all of your clients.  Quite often, network servers will use multicast to achieve
+this, but pants can do this with both unicast and multicast--or both at the same
+time, while writing to a file (<-- maybe for debug purposes, for example?).
+
+=== Limitations
 
 The amount of data you can replicate really depends, of course, on system
 resources.  On an i7 MacBook Pro with 16GB RAM and 2 wired NICs, I've been able
