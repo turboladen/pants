@@ -2,4 +2,5 @@ source :rubygems
 gemspec
 
 gem 'thor'
-gem 'effer', github: "turboladen/effer"
+#gem 'effing', github: "turboladen/effing"
+gem 'effing', path: '../effing'

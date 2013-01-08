@@ -1,6 +1,6 @@
 require 'eventmachine'
 require_relative 'base_reader'
-require 'effer/file_reader'
+require 'effing/file_reader'
 
 
 class Pants
@@ -18,7 +18,7 @@ class Pants
       # @param [String] file_path Path to the file to read.
       #
       # @param [Symbol,Fixnum] stream_id Symbols are returned by
-      #   Effer::Stream#type, so check docs there for candidates; typical choices
+      #   Effing::Stream#type, so check docs there for candidates; typical choices
       #   are :video or :audio.  Can also be, more explicitly, the index of the
       #   stream as it is inside the file.
       #
@@ -55,7 +55,7 @@ class Pants
       # @param [String] file_path The path to the file to read.
       #
       def init_stream(file_path, stream_id)
-        reader = Effer::FileReader.new(file_path)
+        reader = Effing::FileReader.new(file_path)
         reader.dump_format
 
         log "Opening and adding file at #{file_path}..."
