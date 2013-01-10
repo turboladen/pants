@@ -54,10 +54,11 @@ class Pants
     # "item" (however the data was put onto the queue) at a time.  It will
     # continually yield as there is data that comes in on the queue.
     #
+    # @param [Proc] block The block to yield items from the reader to.
     # @yield [item] Gives one item off the read queue.
-    def read
+    def read_items(&block)
       processor = proc do |item|
-        yield item
+        block.call(item)
         @reads += item.size
         @read_queue.pop(&processor)
       end
@@ -85,19 +86,5 @@ class Pants
 
       @write_queue.pop(&processor)
     end
-  end
-end
-
-
-class Pants::SimpleSeam < Pants::Seam
-  def start
-    callback = EM.Callback do
-      log "Starting simple seam..."
-      read do |data|
-        write data
-      end
-    end
-
-    super(callback)
   end
 end
