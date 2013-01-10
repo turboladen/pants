@@ -56,11 +56,11 @@ describe Pants::Readers::BaseReader do
     end
   end
 
-  describe "#add_writer" do
+  describe "#write_to" do
     context "unknown URI scheme" do
       it "raises an ArgumentError" do
         expect {
-          subject.add_writer("test://stuff")
+          subject.write_to("test://stuff")
         }.to raise_error ArgumentError
       end
     end
@@ -81,7 +81,7 @@ describe Pants::Readers::BaseReader do
           arg2.should be_a EventMachine::Channel
         end
 
-        subject.add_writer('test://somehost')
+        subject.write_to('test://somehost')
       end
     end
   end

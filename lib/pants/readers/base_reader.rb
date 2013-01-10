@@ -77,24 +77,63 @@ class Pants
         @running
       end
 
-      # @param [String] id The URI to the object to read.  Can be a file:///,
+      # @param [String] uri The URI to the object to read.  Can be a file:///,
       #   udp://.
       #
       # @return [Pants::Writer] The newly created writer.
-      def add_writer(id, *args)
-        if id.is_a? String
-          begin
-            uri = URI(id)
-          rescue URI::InvalidURIError
-            @writers << new_writer_from_uri(nil, @write_to_channel)
-          else
-            @writers << new_writer_from_uri(uri, @write_to_channel)
-          end
+      def write_to(uri)
+        begin
+          uri = uri.is_a?(URI) ? uri : URI(uri)
+        rescue URI::InvalidURIError
+          @writers << new_writer_from_uri(nil, @write_to_channel)
         else
-          @writers << new_writer_from_symbol(id, *args, @write_to_channel)
+          @writers << new_writer_from_uri(uri, @write_to_channel)
         end
 
         @writers.last
+      end
+
+      # One method of adding a Writer to the Reader.  Use this method to add an
+      # a) already instantiated Writer object, or b) a Writers from a class of
+      # Writer objects.
+      #
+      # @example Add using class and init variables
+      #   core = Pants::Core.new
+      #   core.read 'udp://10.2.3.4:9000'
+      #   core.add_writer(Pants::Writers::UDPWriter, '10.5.6.7', 9000)
+      #
+      # @example Add using an already instantiated Writer object
+      #   core = Pants::Core.new
+      #   reader = core.read 'udp://10.2.3.4:9000'
+      #   writer = Pants::Writers::UDPWriter.new('10.5.6.7', 9000, reader.write_to_channel)
+      #   core.add_writer(writer)
+      #
+      # Notice how using the last method requires you to pass in the channel
+      # that the reader is pushing data to--this is probably one reason for
+      # avoiding this method of adding a writer, yet remains available for
+      # flexibility.
+      #
+      # @param [Class,Pants::Reader] obj Either the class of a Writer to create,
+      #   or an already created Writer object.
+      # @param [*] args Any arguments that need to be used for creating the
+      #   Writer.
+      def add_writer(obj, *args)
+        if obj.is_a? Class
+          @writers << obj.new(*args, @write_to_channel)
+        elsif obj.kind_of? Pants::Writers::BaseWriter
+          @writers << obj
+        else
+          raise Pants::Error, "Don't know how to add a writer of type #{obj}"
+        end
+
+        @writers.last
+      end
+
+      def remove_writer(klass, key_value_pairs)
+        @writers.delete_if do |writer|
+          writer.is_a?(klass) &&
+            key_value_pairs.all? { |k, v| writer.send(k) == v }
+        end
       end
 
       def add_seam(klass, *args)
@@ -187,24 +226,6 @@ class Pants
           writer[:args].map { |arg| uri.send(arg) }
         else
           []
-        end
-
-        writer[:klass].new(*args, read_from_channel)
-      end
-
-      # Creates a Writer based on the mapping defined in Pants.writers.
-      #
-      # @param [Symbol] symbol The Symbol that defines the Writer.
-      # @param [EventMachine::Channel] read_from_channel The channel that the
-      #   Writer will read from.
-      # @return [Pants::Writer] The newly created Writer.
-      # @raise [ArgumentError] If Pants.writers doesn't contain a mapping for the
-      #   URI to a Writer class.
-      def new_writer_from_symbol(symbol, *args, read_from_channel)
-        writer = Pants.writers.find { |writer| writer[:uri_scheme] == symbol }
-
-        unless writer
-          raise ArgumentError, "No writer found with URI scheme: #{symbol}"
         end
 
         writer[:klass].new(*args, read_from_channel)

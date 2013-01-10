@@ -15,8 +15,8 @@ describe "File reads" do
 
   it "reads from a file and copies all data to all other writer types" do
     Pants.read(original_file_path) do |reader|
-      reader.add_writer(dest_file_path)
-      reader.add_writer('udp://127.0.0.1:0')
+      reader.write_to(dest_file_path)
+      reader.write_to('udp://127.0.0.1:0')
     end
 
     original_file_path.should be_the_same_size_as dest_file_path
