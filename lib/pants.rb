@@ -39,7 +39,7 @@ class Pants
   # Convenience method; doing something like:
   #
   #   pants = Pants::Core.new
-  #   reader = pants.add_reader('udp://0.0.0.0:1234')
+  #   reader = pants.read('udp://0.0.0.0:1234')
   #   reader.add_writer('udp://1.2.3.4:5999')
   #   reader.add_writer('udp_data.raw')
   #   pants.run
@@ -55,7 +55,13 @@ class Pants
   #   to a file.
   def self.read(uri, &block)
     pants = Pants::Core.new(&block)
-    pants.add_reader(uri)
+
+    if uri.kind_of? Pants::Readers::BaseReader
+      pants.add_reader(uri)
+    else
+      pants.read(uri)
+    end
+
     pants.run
   end
 

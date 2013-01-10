@@ -5,11 +5,11 @@ require "pants/core"
 describe Pants::Core do
   let(:callback) { double "EM.Callback" }
 
-  describe "#add_reader" do
+  describe "#read" do
     context "unknown URI scheme" do
       it "raises an ArgumentError" do
         expect {
-          subject.add_reader("test://stuff")
+          subject.read("test://stuff")
         }.to raise_error ArgumentError
       end
     end
@@ -34,7 +34,7 @@ describe Pants::Core do
           arg2.should be_a EM.Callback
         end.and_return(test_reader)
 
-        subject.add_reader('test://somehost')
+        subject.read('test://somehost')
       end
     end
   end

@@ -21,34 +21,78 @@ class Pants
       @convenience_block = block
     end
 
-    # @param [String] id The URI to the object to read.  Can be a file:///,
-    #   udp://, or an empty string for a file.
+    # One method of adding a Reader to the Core.  Use this method to make code
+    # reader nicer when reading something that's expressed as a URI.
+    #
+    # @example
+    #   core = Pants::Core.new
+    #   core.read 'udp://10.2.3.4:9000'
+    #
+    # @param [String,URI] uri The URI to the object to read.  Can be a file:///,
+    #   udp://, or a string with the path to a file.
     #
     # @return [Pants::Reader] The newly created reader.
-    def add_reader(id)
-      callback = EM.Callback do
+    def read(uri)
+      begin
+        uri = uri.is_a?(URI) ? uri : URI(uri)
+      rescue URI::InvalidURIError
+        @readers << new_reader_from_uri(nil, callback)
+      else
+        @readers << new_reader_from_uri(uri, callback)
+      end
+
+      @convenience_block.call(@readers.last) if @convenience_block
+
+      @readers.last
+    end
+
+    # One method of adding a Reader to the Core.  Use this method to add an
+    # a) already instantiated Reader object, or b) a Reader from a class of
+    # Reader objects.
+    #
+    # @example Add using class and init variables
+    #   core = Pants::Core.new
+    #   core.add_reader(Pants::Readers::UDPReader, '10.2.3.4', 9000)
+    #
+    # @example Add using an already instantiated Reader object
+    #   core = Pants::Core.new
+    #   reader = Pants::Readers::UDPReader.new('10.2.3.4', 9000, core.callback)
+    #   core.add_reader(reader)
+    #
+    # Notice how using the last method requires you to pass in the core's
+    # callback method--this is probably one reason for avoiding this method of
+    # adding a reader, yet remains available for flexibility.
+    #
+    # @param [Class,Pants::Reader] obj Either the class of a Reader to create,
+    #   or an already created Reader object.
+    # @param [*] args Any arguments that need to be used for creating the
+    #   Reader.
+    def add_reader(obj, *args)
+      if obj.is_a? Class
+        @readers << obj.new(*args, callback)
+      elsif obj.kind_of? Pants::Readers::BaseReader
+        @readers << obj
+      else
+        raise Pants::Error, "Don't know how to add a reader of type #{obj}"
+      end
+
+      @convenience_block.call(@readers.last) if @convenience_block
+
+      @readers.last
+    end
+
+    # Creates an EventMachine::Callback method that other Readers, Writers, and
+    # others can use for letting the Core know when it can shutdown.  Those
+    # Readers, Writers, etc. should handle calling this callback when they're
+    # done doing what they need to do.
+    #
+    # @return [EventMachine::Callback]
+    def callback
+      EM.Callback do
         if @readers.none?(&:running?)
           EM.stop_event_loop
         end
       end
-
-      if id.is_a? String
-        begin
-          uri = URI(id)
-        rescue URI::InvalidURIError
-          @readers << new_reader_from_uri(nil, callback)
-        else
-          @readers << new_reader_from_uri(uri, callback)
-        end
-      elsif id.is_a? Symbol
-        @readers << new_reader_from_symbol(id, callback)
-      end
-
-      if @convenience_block
-        @convenience_block.call(@readers.last)
-      end
-
-      @readers.last
     end
 
     # @param [String] uri_string The URI to the object to read and demux.  Must be
@@ -116,7 +160,6 @@ class Pants
 
         @readers.each(&:stop!)
       end
-
     end
 
     # Stop, then run.
@@ -171,22 +214,6 @@ class Pants
 
       unless reader
         raise ArgumentError, "No reader found with URI scheme: #{uri.scheme}"
-      end
-
-      args = if reader[:args]
-        reader[:args].map { |arg| uri.send(arg) }
-      else
-        []
-      end
-
-      reader[:klass].new(*args, callback)
-    end
-
-    def new_reader_from_symbol(symbol, callback)
-      reader = Pants.readers.find { |reader| reader[:uri_scheme] == symbol }
-
-      unless reader
-        raise ArgumentError, "No reader found with URI scheme: #{symbol}"
       end
 
       args = if reader[:args]
