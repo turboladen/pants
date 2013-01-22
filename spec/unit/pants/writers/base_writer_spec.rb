@@ -18,4 +18,18 @@ describe Pants::Writers::BaseWriter do
       end
     end
   end
+
+  describe "#stopper" do
+    context "@stopper not yet defined and @running is true" do
+      before do
+        subject.instance_variable_set(:@running, true)
+      end
+
+      it "creates a new deferrable that sets @running to false" do
+        subject.should be_running
+        subject.stopper.succeed
+        subject.should_not be_running
+      end
+    end
+  end
 end

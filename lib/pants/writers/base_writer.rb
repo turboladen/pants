@@ -31,6 +31,7 @@ class Pants
       #
       # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
       #   called.
+      # @todo Use Callback instead of DefaultDeferrable
       def starter
         return @starter if @starter
 
@@ -43,6 +44,12 @@ class Pants
         @starter
       end
 
+      # This should get caled with #succeed after the writer is done writing
+      # out the data in its channel.
+      #
+      # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
+      #   called.
+      # @todo Use Callback instead of DefaultDeferrable
       def stopper
         return @stopper if @stopper
 
