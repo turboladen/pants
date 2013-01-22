@@ -26,6 +26,11 @@ class Pants
         warn "You haven't defined a stop method--are you sure you're cleaning up?"
       end
 
+      # This should get called with #succeed after the writer is sure to be up
+      # and running, ready for accepting data.
+      #
+      # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
+      #   called.
       def starter
         return @starter if @starter
 
