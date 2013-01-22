@@ -12,11 +12,11 @@ class Pants
       # @param [EventMachine::Channel] write_to_channel The data channel to write
       #   read data to.
       #
-      # @param [EventMachine::Deferrable] finisher Gets set to succeeded when the
+      # @param [EventMachine::Deferrable] stopper Gets set to succeeded when the
       #   file-to-read has been fully read.
-      def initialize(write_to_channel, starter, finisher)
+      def initialize(write_to_channel, starter, stopper)
         @write_to_channel = write_to_channel
-        @finisher = finisher
+        @stopper = stopper
         @starter = starter
       end
 
@@ -35,7 +35,7 @@ class Pants
       # Called when the file is done being read.
       def unbind
         log "Unbinding"
-        @finisher.succeed
+        @stopper.succeed
       end
     end
 
@@ -48,7 +48,7 @@ class Pants
       # @param [String] file_path Path to the file to read.
       #
       # @param [EventMachine::Callback] main_callback The Callback that will get
-      #   called when #finisher is called.  #finisher is called when the whole
+      #   called when #stopper is called.  #stopper is called when the whole
       #   file has been read and pushed to the channel.
       def initialize(file_path, main_callback)
         log "file path #{file_path}"
@@ -63,7 +63,7 @@ class Pants
         callback = EM.Callback do
           log "Opening and adding file at #{@file_path}..."
           file = File.open(@file_path, 'r')
-          EM.attach(file, FileReaderConnection, @write_to_channel, starter, finisher)
+          EM.attach(file, FileReaderConnection, @write_to_channel, starter, stopper)
         end
 
         super(callback)

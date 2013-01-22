@@ -148,7 +148,7 @@ class Pants
     # Tells the reader to signal to its writers that it's time to finish.
     def stop!
       puts "Stop called.  Closing readers and writers..."
-      #@readers.each { |reader| reader.finisher.set_deferred_success }
+      #@readers.each { |reader| reader.stopper.set_deferred_success }
       if @readers.none?(&:running?)
         puts "No readers are running; nothing to do."
       else

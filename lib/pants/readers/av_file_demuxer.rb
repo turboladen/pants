@@ -23,7 +23,7 @@ class Pants
       #   stream as it is inside the file.
       #
       # @param [EventMachine::Callback] main_callback The Callback that will get
-      #   called when #finisher is called.  #finisher is called when the while
+      #   called when #stopper is called.  #stopper is called when the while
       #   file has been demuxed and all packets have been pushed to the channel.
       def initialize(file_path, stream_id, main_callback)
         @info = "#{file_path}:#{stream_id}"
@@ -41,7 +41,7 @@ class Pants
       def start
         callback = EM.Callback do
           EM.next_tick do
-            callback = proc { finisher.succeed }
+            callback = proc { stopper.succeed }
 
             @stream.each_packet(callback) do |packet|
               @write_to_channel << packet[:data].read_string(packet[:size])

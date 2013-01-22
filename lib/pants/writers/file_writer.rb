@@ -23,7 +23,7 @@ class Pants
       def stop
         log "Finishing ID #{__id__} and closing file #{@file}"
         @file.close unless @file.closed?
-        finisher.succeed
+        stopper.succeed
       end
 
       def start

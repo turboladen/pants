@@ -105,7 +105,7 @@ class Pants
       def stop
         log "Finishing ID #{__id__}"
         @connection.close_connection_after_writing
-        finisher.succeed
+        stopper.succeed
       end
     end
   end

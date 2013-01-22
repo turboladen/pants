@@ -22,7 +22,7 @@ describe Pants::Readers::BaseReader do
     end
   end
 
-  describe "#finisher" do
+  describe "#stopper" do
     context "when called back with success" do
       before do
         subject.instance_variable_set(:@writers, [test_writer])
@@ -46,12 +46,12 @@ describe Pants::Readers::BaseReader do
         i
       end
 
-      it "calls each writer's finisher and the main callback" do
+      it "calls each writer's stopper and the main callback" do
         callback.should_receive(:call)
         test_writer.should_receive(:running?)
         test_writer.should_receive(:stop)
 
-        subject.send(:finisher).set_deferred_success
+        subject.send(:stopper).set_deferred_success
       end
     end
   end

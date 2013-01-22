@@ -47,7 +47,7 @@ class Pants
         end
       end
 
-      finish_loop.on_stop { finisher.succeed }
+      finish_loop.on_stop { stopper.succeed }
     end
 
     # Call this to read data that was put into the read queue.  It yields one

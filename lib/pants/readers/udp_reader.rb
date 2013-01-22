@@ -52,8 +52,8 @@ class Pants
       # @param [Fixnum] read_port The UDP port to read on.
       #
       # @param [EventMachine::Callback] main_callback The Callback that will get
-      #   called when #finisher is called.  Since there is no clear end to when
-      #   to stop reading this I/O, #finisher is never called internally; it must
+      #   called when #stopper is called.  Since there is no clear end to when
+      #   to stop reading this I/O, #stopper is never called internally; it must
       #   be called externally.
       def initialize(read_ip, read_port, main_callback)
         @info = "udp://#{read_ip}:#{read_port}"

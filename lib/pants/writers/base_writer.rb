@@ -10,7 +10,7 @@ class Pants
       attr_reader :starter
 
       # The block to be called when the reader is done reading.
-      attr_reader :finisher
+      attr_reader :stopper
 
       def initialize(read_from_channel)
         @running = false
@@ -43,16 +43,16 @@ class Pants
         @starter
       end
 
-      def finisher
-        return @finisher if @finisher
+      def stopper
+        return @stopper if @stopper
 
-        @finisher = EM::DefaultDeferrable.new
+        @stopper = EM::DefaultDeferrable.new
 
-        @finisher.callback do
+        @stopper.callback do
           @running = false
         end
 
-        @finisher
+        @stopper
       end
 
       def running?

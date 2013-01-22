@@ -64,13 +64,13 @@ class Pants
         end
       end
 
-      # Calls the reader's #finisher, thus forcing the reader to shutdown.  For
+      # Calls the reader's #stopper, thus forcing the reader to shutdown.  For
       # readers that intend to read a finite amount of data, the Reader should
-      # call the #finisher when it's done; for readers that read a non-stop stream
+      # call the #stopper when it's done; for readers that read a non-stop stream
       # (i.e. like an open socket), this gets called by OS signals (i.e. if you
       # ctrl-c).
       def stop!
-        finisher.succeed
+        stoper.succeed
       end
 
       def running?
@@ -166,12 +166,12 @@ class Pants
       #
       # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
       #   called by any Reader when it's done reading.
-      def finisher
-        return @finisher if @finisher
+      def stopper
+        return @stopper if @stopper
 
-        @finisher = EM::DefaultDeferrable.new
+        @stopper = EM::DefaultDeferrable.new
 
-        @finisher.callback do
+        @stopper.callback do
           log "Got called back after finished reading.  Starting shutdown..."
 
           # remove this next_tick?
@@ -195,7 +195,7 @@ class Pants
           end
         end
 
-        @finisher
+        @stopper
       end
 
       #---------------------------------------------------------------------------
