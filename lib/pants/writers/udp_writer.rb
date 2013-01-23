@@ -94,12 +94,7 @@ class Pants
           @connection = EM.open_datagram_socket('0.0.0.0', 0, UDPWriterConnection,
             @read_from_channel, @write_ip, @write_port)
 
-          start_loop = EM.tick_loop do
-            if @connection
-              :stop
-            end
-          end
-
+          start_loop = EM.tick_loop { :stop if @connection }
           start_loop.on_stop { starter.succeed }
         end
       end
