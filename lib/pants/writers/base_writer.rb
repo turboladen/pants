@@ -4,6 +4,13 @@ require_relative '../logger'
 
 class Pants
   module Writers
+
+    # Provides conventions for creating your own writer that can stop and start
+    # safely.
+    #
+    # You should also consider adding attr_readers/methods for attributes that
+    # are differentiators from other writers of the same type.  This will allow
+    # readers to more easily remove your writer from them.
     class BaseWriter
 
       # The block to be called when starting up a new Pants reader.
