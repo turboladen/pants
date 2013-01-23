@@ -86,6 +86,7 @@ class Pants
         super(read_from_channel)
       end
 
+      # Readies the writer for data to write and waits for data to write.
       def start
         log "#{__id__} Adding a #{self.class} at #{@write_ip}:#{@write_port}..."
 
@@ -98,6 +99,7 @@ class Pants
               :stop
             end
           end
+
           start_loop.on_stop { starter.succeed }
         end
       end
