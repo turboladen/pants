@@ -4,7 +4,7 @@ require 'pants/readers/base_reader'
 
 describe Pants::Readers::BaseReader do
   let(:test_writer) do
-    double "Pants::TestWriter"
+    double "Pants::Writers::TestWriter"
   end
 
   before do
@@ -16,9 +16,71 @@ describe Pants::Readers::BaseReader do
   subject { Pants::Readers::BaseReader.new(callback) }
 
   describe "#initialize" do
-    it "creates a write_to_channel if one isn't passed in" do
+    it "creates a write_to_channel" do
       reader = Pants::Readers::BaseReader.new(callback)
       reader.write_to_channel.should be_a EM::Channel
+    end
+  end
+
+  describe "#start" do
+    around(:each) do |example|
+      EM.run do
+        example.run
+        #EM.stop
+        EM.add_timer(1) { EM.stop }
+      end
+    end
+
+    let(:starter) do
+      s = double "@starter"
+      #s.should_receive(:call)
+
+      s
+    end
+
+    it "starts the writers first, then the readers" do
+      # It seems that any methods I expect to get called inside EM.next_tick
+      # don't get registered as being called.  If I log inside there, I see that
+      # things are as expected, but RSpec still fails the tests.
+      pending "Figuring out how to set expectations inside EM.next_tick"
+      subject.start
+    end
+  end
+
+  describe "#stop!" do
+    let(:stopper) do
+      s = double "EventMachine::DefaultDeferrable"
+      s.should_receive(:succeed)
+
+      s
+    end
+
+    it "calls succeed on the stopper" do
+      subject.should_receive(:stopper).and_return(stopper)
+
+      subject.stop!
+    end
+  end
+
+  describe "#write_to" do
+    context "unknown URI scheme" do
+      it "raises an ArgumentError" do
+        expect {
+          subject.write_to("test://stuff")
+        }.to raise_error ArgumentError
+      end
+    end
+
+    context "known URI scheme" do
+      it "creates the new writer, adds it to @writers, and returns it" do
+        uri = URI "test://somehost"
+        subject.should_receive(:new_writer_from_uri) do |arg1, arg2|
+          arg1.should == uri
+          arg2.should be_a EventMachine::Channel
+        end.and_return(test_writer)
+
+        subject.write_to('test://somehost').should == test_writer
+      end
     end
   end
 
@@ -53,61 +115,6 @@ describe Pants::Readers::BaseReader do
 
         subject.send(:stopper).set_deferred_success
       end
-    end
-  end
-
-  describe "#write_to" do
-    context "unknown URI scheme" do
-      it "raises an ArgumentError" do
-        expect {
-          subject.write_to("test://stuff")
-        }.to raise_error ArgumentError
-      end
-    end
-
-    context "known URI scheme" do
-      let(:writers) do
-        [{ uri_scheme: 'test', klass: test_writer }]
-      end
-
-      before do
-        Pants.stub(:writers).and_return writers
-      end
-
-      it "creates the new writer and adds it to @writers" do
-        uri = URI "test://somehost"
-        subject.should_receive(:new_writer_from_uri) do |arg1, arg2|
-          arg1.should == uri
-          arg2.should be_a EventMachine::Channel
-        end
-
-        subject.write_to('test://somehost')
-      end
-    end
-  end
-
-  describe "#start" do
-    around(:each) do |example|
-      EM.run do
-        example.run
-        #EM.stop
-        EM.add_timer(1) { EM.stop }
-      end
-    end
-
-    let(:starter) do
-      s = double "@starter"
-      #s.should_receive(:call)
-
-      s
-    end
-
-    it "starts the writers first, then the readers" do
-      # It seems that any methods I expect to get called inside EM.next_tick
-      # don't get registered as being called.  If I log inside there, I see that
-      # things are as expected, but RSpec still fails the tests.
-      pending "Figuring out how to set expectations inside EM.next_tick"
-      subject.start
     end
   end
 end

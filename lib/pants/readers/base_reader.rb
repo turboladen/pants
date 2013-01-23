@@ -78,10 +78,10 @@ class Pants
         @running
       end
 
-      # @param [String] uri The URI to the object to read.  Can be a file:///,
-      #   udp://.
+      # @param [String] uri The URI to the object to read.  Can be of URI type
+      #   that's defined in Pants.writers.
       #
-      # @return [Pants::Writer] The newly created writer.
+      # @return [Pants::Writers::BaseWriter] The newly created writer.
       def write_to(uri)
         begin
           uri = uri.is_a?(URI) ? uri : URI(uri)
