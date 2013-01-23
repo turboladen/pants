@@ -73,3 +73,36 @@ describe Pants::Writers::UDPWriter do
     end
   end
 end
+
+describe Pants::Writers::UDPWriterConnection do
+  let(:channel) { double "EventMachine::Channel" }
+  let(:port) { 1234 }
+
+  describe "#initialize" do
+    before do
+      Pants::Writers::UDPWriterConnection.any_instance.stub(:post_init)
+    end
+
+    context "multicast IP address" do
+      let(:ip) { '224.0.0.1' }
+
+      it "sets up the socket to do multicast" do
+        Pants::Writers::UDPWriterConnection.any_instance.
+          should_receive(:setup_multicast_socket).with(ip)
+
+        Pants::Writers::UDPWriterConnection.new(0, channel, ip, port)
+      end
+    end
+
+    context "unicast IP address" do
+      let(:ip) { '223.0.0.1' }
+
+      it "does not set up the socket to do multicast" do
+        Pants::Writers::UDPWriterConnection.any_instance.
+          should_not_receive(:setup_multicast_socket)
+
+        Pants::Writers::UDPWriterConnection.new(0, channel, ip, port)
+      end
+    end
+  end
+end

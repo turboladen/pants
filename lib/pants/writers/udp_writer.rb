@@ -17,13 +17,13 @@ class Pants
       PACKET_SPLIT_THRESHOLD = 1500
 
       # Packets get split up to this size before writing.
-      PACKET_SPLIT_SIZE = 500
+      PACKET_SPLIT_SIZE = 1300
 
       # @param [EventMachine::Channel] read_from_channel The channel to expect
       #   data on and write to the socket.
       #
-      # @param [String] dest_ip The IP address to send data to.  Can be unicast or
-      #   multicast.
+      # @param [String] dest_ip The IP address to send data to.  Can be unicast
+      #   or multicast.
       #
       # @param [Fixnum] dest_port The UDP port to send data to.
       def initialize(read_from_channel, dest_ip, dest_port)
