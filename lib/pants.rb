@@ -8,32 +8,47 @@ require_relative 'pants/seam'
 # redirects it to multiple writers (the outputs).
 class Pants
 
-  DEFAULT_READERS = [
+  DEFAULT_URI_TO_READER_MAP = [
     { uri_scheme: nil, klass: Pants::Readers::FileReader, args: [:path] },
     { uri_scheme: 'file', klass: Pants::Readers::FileReader, args: [:path] },
     { uri_scheme: 'udp', klass: Pants::Readers::UDPReader, args: [:host, :port] }
   ]
 
-  DEFAULT_DEMUXERS = [
-    { uri_scheme: nil, klass: Pants::Readers::AVFileDemuxer },
-    { uri_scheme: 'file', klass: Pants::Readers::AVFileDemuxer }
-  ]
-
-  def self.readers
-    @readers ||= DEFAULT_READERS
-  end
-
-  def self.demuxers
-    @demuxers ||= DEFAULT_DEMUXERS
-  end
-
-  DEFAULT_WRITERS = [
+  DEFAULT_URI_TO_WRITER_MAP = [
     { uri_scheme: nil, klass: Pants::Writers::FileWriter, args: [:path] },
     { uri_scheme: 'udp', klass: Pants::Writers::UDPWriter, args: [:host, :port] }
   ]
 
+  # The list of mappings of URIs to Reader class types.  These mappings allow
+  # Pants to look up the URI scheme and find what type of object should be
+  # created when creating a Reader by giving it a URI.  It also defines the
+  # arguments that the Reader class takes; these should Symbols that represent
+  # names of methods that can be called on objects of the URI type.
+  #
+  # You can register new mappings here by pushing new mappings to the list.
+  # Mappings should be in the form:
+  #   { uri_scheme: 'my_scheme', klass: MyReaderClass, args: [:arg] }
+  #
+  # Note that if you're wanting to add to this list, and URI doesn't recognize
+  # the URI scheme that you're adding for, you'll need to define that within
+  # URI.  An example is given here: http://www.ruby-doc.org/stdlib-1.9.3/libdoc/uri/rdoc/URI.html
+  #
+  # If you want to use your own reader but don't want to go through all of this
+  # hassle, you can add your reader using a different method.  See the docs for
+  # Pants::Core for more info.
+  #
+  # @return [Array] The list of mappings.
+  def self.readers
+    @readers ||= DEFAULT_URI_TO_READER_MAP
+  end
+
+  # The list of mappings of URIs to Writer class types.  See the docs for
+  # .readers for more info.
+  #
+  # @return [Array] The list of mappings.
+  # @see Pants.readers
   def self.writers
-    @writers ||= DEFAULT_WRITERS
+    @writers ||= DEFAULT_URI_TO_WRITER_MAP
   end
 
   # Convenience method; doing something like:
@@ -64,31 +79,4 @@ class Pants
 
     pants.run
   end
-
-  # Convenience method; doing something like:
-  #
-  #   pants = Pants.new
-  #   demuxer = pants.add_demuxer('my_movie.m4v')
-  #   demuxer.add_writer('udp://1.2.3.4:5999')
-  #   demuxer.add_writer('mpeg4_data.raw')
-  #   pants.run
-  #
-  # ...becomes:
-  #
-  #   Pants.demux('my_movie.m4v') do |seam|
-  #     seam.add_writer('udp://1.2.3.4:5999')
-  #     seam.add_writer('mpepg4_data.raw')
-  #   end
-  #
-  # @param [String] uri The path to the file to demux.
-  # @param [Symbol,Fixnum] stream_id The ID of the stream in the file to
-  #   extract.  Can be :video, :audio, or the actual stream index number.
-  def self.demux(uri, stream_id, &block)
-    pants = Pants::Core.new(&block)
-    pants.add_demuxer(uri, stream_id)
-    pants.run
-  end
-
-
-
 end

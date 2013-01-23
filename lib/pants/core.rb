@@ -95,27 +95,6 @@ class Pants
       end
     end
 
-    # @param [String] uri_string The URI to the object to read and demux.  Must be
-    #   a path to a file.
-    #
-    # @return [Pants::Reader] The newly created reader.
-    # @todo Merge this back to Readers
-    def add_demuxer(uri_string, stream_id)
-      callback = EM.Callback do
-        if @readers.none?(&:running?)
-          EM.stop_event_loop
-        end
-      end
-
-      @readers << Pants::Readers::AVFileDemuxer.new(uri_string, stream_id, callback)
-
-      if @convenience_block
-        @convenience_block.call(@readers.last)
-      end
-
-      @readers.last
-    end
-
     # Starts the EventMachine reactor, the reader and the writers.
     def run
       raise Pants::Error, "No readers added yet" if @readers.empty?
