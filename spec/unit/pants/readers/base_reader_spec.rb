@@ -124,6 +124,50 @@ describe Pants::Readers::BaseReader do
     end
   end
 
+  describe "#remove_writer" do
+    before do
+      subject.instance_variable_set(:@writers, writers)
+    end
+
+    let(:writers) do
+      [String.new, Hash.new, Array.new]
+    end
+
+    context "@writers doesn't contain a writer by the given class" do
+      it "doesn't remove anything" do
+        subject.remove_writer(URI, {})
+        subject.writers.size.should be 3
+      end
+    end
+
+    context "@writers contains a writer by the given class" do
+      context "but doesn't match criteria given by key_value_pairs" do
+        it "doesn't remove anything" do
+          subject.remove_writer(String, size: 1)
+          subject.writers.size.should be 3
+        end
+      end
+
+      context "and criteria matches given key_value_pairs" do
+        it "removes the matching object" do
+          subject.remove_writer(String, size: 0)
+          subject.writers.size.should be 2
+        end
+      end
+
+      context "and criteria of more than 1 object matches given key_value_pairs" do
+        let(:writers) do
+          [String.new, String.new, String.new]
+        end
+
+        it "removes the matching object" do
+          subject.remove_writer(String, size: 0)
+          subject.writers.size.should be 0
+        end
+      end
+    end
+  end
+
   describe "#stopper" do
     context "when called back with success" do
       before do

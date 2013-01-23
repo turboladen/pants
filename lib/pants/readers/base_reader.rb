@@ -116,6 +116,7 @@ class Pants
       #
       # @param [Class,Pants::Reader] obj Either the class of a Writer to create,
       #   or an already created Writer object.
+      #
       # @param [*] args Any arguments that need to be used for creating the
       #   Writer.
       def add_writer(obj, *args)
@@ -130,6 +131,18 @@ class Pants
         @writers.last
       end
 
+      # Removes a writer object from the internal list of writers.
+      #
+      # @example
+      #   reader.writers    # => [<Pants::Writers::FileWriter @file_path='./testfile'...>]
+      #   reader.remove_writer(Pants::Writers::FileWriter, file_path: './testfile')
+      #   reader.writers    # => []
+      #
+      # @param [Class] klass Class of the writer to remove.
+      #
+      # @param [Hash] key_value_pairs Keys are methods to be called on each
+      #   writer and will be checked to see if the return value from that method
+      #   equals the given value.
       def remove_writer(klass, key_value_pairs)
         @writers.delete_if do |writer|
           writer.is_a?(klass) &&
