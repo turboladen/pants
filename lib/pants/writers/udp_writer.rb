@@ -14,7 +14,7 @@ class Pants
       include Pants::NetworkHelpers
 
       # Packets get split up before writing if they're over this size.
-      PACKET_SPLIT_THRESHOLD = 1500
+      PACKET_SPLIT_THRESHOLD = 1400
 
       # Packets get split up to this size before writing.
       PACKET_SPLIT_SIZE = 1300
@@ -52,12 +52,15 @@ class Pants
             io.binmode
 
             begin
-              log "#{__id__} Spliced 500 bytes to socket packet"
-              new_packet = io.read_nonblock(PACKET_SPLIT_SIZE)
-              send_datagram(new_packet, @dest_ip, @dest_port)
+              log "#{__id__} Spliced #{PACKET_SPLIT_SIZE} bytes to socket packet"
+
+              while true
+                new_packet = io.read_nonblock(PACKET_SPLIT_SIZE)
+                send_datagram(new_packet, @dest_ip, @dest_port)
+                new_packet = nil
+              end
             rescue EOFError
-              socket_sender.notify(new_packet)
-              send_datagram(new_packet, @dest_ip, @dest_port)
+              send_datagram(new_packet, @dest_ip, @dest_port) if new_packet
               io.close
             end
           else

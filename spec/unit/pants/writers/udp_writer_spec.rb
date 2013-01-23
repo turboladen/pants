@@ -75,8 +75,13 @@ describe Pants::Writers::UDPWriter do
 end
 
 describe Pants::Writers::UDPWriterConnection do
-  let(:channel) { double "EventMachine::Channel" }
+  let(:channel) { EventMachine::Channel.new }
   let(:port) { 1234 }
+  let(:ip) { '127.0.0.1' }
+
+  subject do
+    Pants::Writers::UDPWriterConnection.new(1, channel, ip, port)
+  end
 
   describe "#initialize" do
     before do
@@ -102,6 +107,41 @@ describe Pants::Writers::UDPWriterConnection do
           should_not_receive(:setup_multicast_socket)
 
         Pants::Writers::UDPWriterConnection.new(0, channel, ip, port)
+      end
+    end
+  end
+
+  describe "#post_init" do
+    around do |example|
+      EM.run do
+        example.run
+        EM.stop
+      end
+    end
+
+    context "data is bigger than PACKET_SPLIT_THRESHOLD" do
+      let(:data) do
+        "0" * Pants::Writers::UDPWriterConnection::PACKET_SPLIT_THRESHOLD * split_count
+      end
+
+      let(:split_count) { 3 }
+
+      it "splits the data by PACKET_SPLIT_SIZE and sends each chunk" do
+        subject.should_receive(:send_datagram).exactly(split_count + 1).times
+        channel << data
+        subject
+      end
+    end
+
+    context "data is smaller than PACKET_SPLIT_THRESHOLD" do
+      let(:data) do
+        "0" * 100
+      end
+
+      it "sends the data as it is" do
+        subject.should_receive(:send_datagram).once.with(data, ip, port)
+        channel << data
+        subject
       end
     end
   end
