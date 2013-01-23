@@ -20,7 +20,7 @@ describe Pants::Writers::UDPWriter do
 
   describe "#start" do
     let(:starter) do
-      s = double "starter"
+      s = double "EventMachine::DefaultDeferrable"
       s.should_receive(:succeed)
 
       s
@@ -45,6 +45,31 @@ describe Pants::Writers::UDPWriter do
       EventMachine.should_receive(:tick_loop).and_yield.and_return(tick_loop)
 
       subject.start
+    end
+  end
+
+  describe "#stop" do
+    let(:connection) do
+      c = double "EventMachine::Connection"
+      c.should_receive(:close_connection_after_writing)
+
+      c
+    end
+
+    let(:stopper) do
+      s = double "EventMachine::DefaultDeferrable"
+      s.should_receive(:succeed)
+
+      s
+    end
+
+    before do
+      subject.instance_variable_set(:@connection, connection)
+      subject.stub(:stopper).and_return(stopper)
+    end
+
+    it "closes the socket and calls succeed on the stopper" do
+      subject.stop
     end
   end
 end

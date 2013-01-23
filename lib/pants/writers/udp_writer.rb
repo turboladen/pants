@@ -99,6 +99,7 @@ class Pants
         end
       end
 
+      # Closes the connection and notifies the reader that it's done.
       def stop
         log "Finishing ID #{__id__}"
         @connection.close_connection_after_writing
