@@ -9,6 +9,9 @@ class Pants
     class FileWriter < BaseWriter
       include LogSwitch::Mixin
 
+      # @return [String] The path to the file that's being written to.
+      attr_reader :file_path
+
       # @param [EventMachine::Channel] read_from_channel The channel to read data
       #   from and thus write to file.
       #

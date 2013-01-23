@@ -81,6 +81,17 @@ class Pants
     class UDPWriter < BaseWriter
       include LogSwitch::Mixin
 
+      # @return [String] The IP address that's being written to.
+      attr_reader :write_ip
+
+      # @return [Fixnum] The port that's being written to.
+      attr_reader :write_port
+
+      # @param [String] write_ip
+      #
+      # @param [Fixnum] write_port
+      #
+      # @param [EventMachine::Channel] read_from_channel
       def initialize(write_ip, write_port, read_from_channel)
         @write_ip = write_ip
         @write_port = write_port
