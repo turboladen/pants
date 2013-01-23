@@ -70,9 +70,10 @@ class Pants
       # (i.e. like an open socket), this gets called by OS signals (i.e. if you
       # ctrl-c).
       def stop!
-        stoper.succeed
+        stopper.succeed
       end
 
+      # @return [Boolean]
       def running?
         @running
       end
