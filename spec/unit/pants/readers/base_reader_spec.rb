@@ -84,6 +84,46 @@ describe Pants::Readers::BaseReader do
     end
   end
 
+  describe "#add_writer" do
+    let(:obj_object) { double "TestWriter" }
+
+    context "obj is a Class" do
+      let(:obj) do
+        class TestWriter; self; end
+      end
+
+      it "creates a new object of that class with all args and the write channel" do
+        first_arg = double "first arg"
+        second_arg = double "second arg"
+
+        obj.should_receive(:new) do |arg1, arg2, arg3|
+          arg1.should == first_arg
+          arg2.should == second_arg
+          arg3.should be_a EventMachine::Channel
+        end.and_return(obj_object)
+
+        subject.add_writer(obj, first_arg, second_arg).should == obj_object
+      end
+    end
+
+    context "obj is a instantiated Writer object" do
+      it "adds that object to the list of writers and returns it" do
+        obj_object.should_receive(:kind_of?).with(Pants::Writers::BaseWriter).
+          and_return(true)
+
+        subject.add_writer(obj_object).should == obj_object
+      end
+    end
+
+    context "obj isn't a Class and isn't a Writer" do
+      it "raises a Pants::Error" do
+        expect {
+          subject.add_writer("meow")
+        }.to raise_error Pants::Error
+      end
+    end
+  end
+
   describe "#stopper" do
     context "when called back with success" do
       before do
