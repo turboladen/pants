@@ -37,6 +37,7 @@ describe Pants::Writers::FileWriter do
     end
 
     before do
+      File.stub(:open)
       subject.instance_variable_set(:@file, file)
       subject.stub(:stopper).and_return(stopper)
     end
