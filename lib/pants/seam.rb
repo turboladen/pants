@@ -7,7 +7,7 @@ class Pants
 
     attr_reader :channel_for_writers
 
-    def initialize(main_callback, reader_channel)
+    def initialize(core_stopper_callback, reader_channel)
       @read_queue = EM::Queue.new
       @write_queue = EM::Queue.new
 
@@ -22,7 +22,7 @@ class Pants
         @receives += data.size
       end
 
-      super(main_callback)
+      super(core_stopper_callback)
       send_data
     end
 

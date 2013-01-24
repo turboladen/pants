@@ -22,19 +22,19 @@ class Pants
 
       attr_reader :write_to_channel
 
-      attr_reader :main_callback
+      attr_reader :core_stopper_callback
 
-      # @param [EventMachine::Callback] main_callback This gets called when all
+      # @param [EventMachine::Callback] core_stopper_callback This gets called when all
       #   reading is done and the writers have written out all their data.  It
       #   signals to the caller that the job of the reader is all done.  For
       #   first level readers (readers that are not Tees), this lets Pants check
       #   all existing Readers to see if they're done, so it can know when to stop
       #   the reactor.
       #
-      def initialize(main_callback)
+      def initialize(core_stopper_callback)
         @writers = []
         @write_to_channel = EM::Channel.new
-        @main_callback = main_callback
+        @core_stopper_callback = core_stopper_callback
         @info ||= ""
         @running = false
 
@@ -161,7 +161,7 @@ class Pants
       #
       # @see Pants::Seam
       def add_seam(klass, *args)
-        @writers << klass.new(@main_callback, @write_to_channel, *args)
+        @writers << klass.new(@core_stopper_callback, @write_to_channel, *args)
 
         @writers.last
       end
@@ -208,7 +208,7 @@ class Pants
 
             start_loop.on_stop do
               @running = false
-              @main_callback.call
+              @core_stopper_callback.call
             end
 
             log "Stopping writers for reader #{self.__id__}"

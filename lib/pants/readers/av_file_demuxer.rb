@@ -22,10 +22,10 @@ class Pants
       #   are :video or :audio.  Can also be, more explicitly, the index of the
       #   stream as it is inside the file.
       #
-      # @param [EventMachine::Callback] main_callback The Callback that will get
+      # @param [EventMachine::Callback] core_stopper_callback The Callback that will get
       #   called when #stopper is called.  #stopper is called when the while
       #   file has been demuxed and all packets have been pushed to the channel.
-      def initialize(file_path, stream_id, main_callback)
+      def initialize(file_path, stream_id, core_stopper_callback)
         @info = "#{file_path}:#{stream_id}"
         init_stream(file_path, stream_id)
 
@@ -33,7 +33,7 @@ class Pants
         @codec_name = @stream.codec_name
         @frame_rate = @stream.frame_rate
 
-        super(main_callback)
+        super(core_stopper_callback)
       end
 
       # Associates the list of writers (that should have already been created

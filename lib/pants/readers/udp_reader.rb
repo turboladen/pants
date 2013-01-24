@@ -51,16 +51,16 @@ class Pants
       #
       # @param [Fixnum] read_port The UDP port to read on.
       #
-      # @param [EventMachine::Callback] main_callback The Callback that will get
+      # @param [EventMachine::Callback] core_stopper_callback The Callback that will get
       #   called when #stopper is called.  Since there is no clear end to when
       #   to stop reading this I/O, #stopper is never called internally; it must
       #   be called externally.
-      def initialize(read_ip, read_port, main_callback)
+      def initialize(read_ip, read_port, core_stopper_callback)
         @info = "udp://#{read_ip}:#{read_port}"
         @read_ip = read_ip
         @read_port = read_port
 
-        super(main_callback)
+        super(core_stopper_callback)
       end
 
       # Starts reading on the UDP IP and port and pushing packets to the channel.

@@ -47,15 +47,15 @@ class Pants
 
       # @param [String] file_path Path to the file to read.
       #
-      # @param [EventMachine::Callback] main_callback The Callback that will get
+      # @param [EventMachine::Callback] core_stopper_callback The Callback that will get
       #   called when #stopper is called.  #stopper is called when the whole
       #   file has been read and pushed to the channel.
-      def initialize(file_path, main_callback)
         log "file path #{file_path}"
+      def initialize(file_path, core_stopper_callback)
         @info = file_path
         @file_path = file_path
 
-        super(main_callback)
+        super(core_stopper_callback)
       end
 
       # Starts reading the file after all writers have been started.
