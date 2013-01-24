@@ -53,8 +53,8 @@ class Pants
       # @param [EventMachine::Callback] core_stopper_callback The Callback that will get
       #   called when #stopper is called.  #stopper is called when the whole
       #   file has been read and pushed to the channel.
-        log "file path #{file_path}"
       def initialize(file_path, core_stopper_callback)
+        log "Initializing #{self.class} with file path '#{file_path}'"
         @info = file_path
         @file_path = file_path
 
@@ -64,7 +64,7 @@ class Pants
       # Starts reading the file after all writers have been started.
       def start
         callback = EM.Callback do
-          log "Opening and adding file at #{@file_path}..."
+          log "Opening and adding file '#{@file_path}'..."
           file = File.open(@file_path, 'r')
           EM.attach(file, FileReaderConnection, @write_to_channel, starter, stopper)
         end
