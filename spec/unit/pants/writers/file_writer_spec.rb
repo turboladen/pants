@@ -9,18 +9,7 @@ describe Pants::Writers::FileWriter do
     Pants::Writers::FileWriter.new(file, channel)
   end
 
-  around do |example|
-    EM.run do
-      example.run
-      EM.stop
-    end
-  end
-
   describe "#stop" do
-    before do
-      Pants::Writers::FileWriter.any_instance.stub(:start)
-    end
-
     let(:file) do
       c = double "File"
       c.should_receive(:closed?).and_return(false)
@@ -39,10 +28,10 @@ describe Pants::Writers::FileWriter do
     before do
       File.stub(:open)
       subject.instance_variable_set(:@file, file)
-      subject.stub(:stopper).and_return(stopper)
     end
 
     it "closes the file and calls succeed on the stopper" do
+      subject.should_receive(:stopper).and_return(stopper)
       subject.stop
     end
   end
@@ -68,7 +57,6 @@ describe Pants::Writers::FileWriter do
     end
 
     before do
-      Pants::Writers::FileWriter.any_instance.should_receive(:start).and_call_original
       File.should_receive(:open).and_return(file)
     end
 
@@ -77,7 +65,7 @@ describe Pants::Writers::FileWriter do
       channel.should_receive(:subscribe).and_yield(data).and_call_original
       EventMachine.should_receive(:tick_loop).and_yield.and_return(tick_loop)
 
-      subject
+      subject.start
     end
   end
 end
