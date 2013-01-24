@@ -4,7 +4,19 @@ require 'pants/readers/file_reader'
 
 describe Pants::Readers::FileReader do
   let(:core_stopper_callback) do
-    double "EventMachine.Callback"
+    double "EventMachine.Callback", call: true
+  end
+
+  let(:tick_loop) do
+    tl = double "EventMachine::TickLoop"
+    tl.stub(:on_stop)
+
+    tl
+  end
+
+  before do
+    EventMachine.stub(:tick_loop).and_return(tick_loop)
+    EventMachine::Iterator.stub_chain(:new, :each)
   end
 
   subject do
@@ -12,16 +24,9 @@ describe Pants::Readers::FileReader do
   end
 
   describe "#start" do
-    let(:file) do
-      double "File"
-    end
-
-    let(:starter) {  double "EventMachine::DefaultDeferrable" }
-    let(:stopper) {  double "EventMachine::DefaultDeferrable" }
-
-    let(:callback) do
-      double "EventMachine.Callback", call: true
-    end
+    let(:file) { double "File" }
+    let(:starter) { double "EventMachine::DefaultDeferrable" }
+    let(:stopper) { double "EventMachine::DefaultDeferrable" }
 
     before do
       File.should_receive(:open).and_return(file)
@@ -30,7 +35,7 @@ describe Pants::Readers::FileReader do
     end
 
     it "defines an EventMachine Callback" do
-      EventMachine.should_receive(:Callback).any_number_of_times.and_yield.and_return(callback)
+      EventMachine.should_receive(:Callback).times.and_yield.and_call_original
 
       EventMachine.should_receive(:attach) do |arg1, arg2, arg3, arg4, arg5|
         arg1.should == file

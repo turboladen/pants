@@ -3,19 +3,13 @@ require 'pants/writers/udp_writer'
 
 
 describe Pants::Writers::UDPWriter do
-  let(:channel) do
-    double "EventMachine::Channel"
-  end
-
+  let(:channel) { double "EventMachine::Channel" }
   let(:ip) { '127.0.0.1' }
   let(:port) { 1234 }
+  before { subject.stub(:log) }
 
   subject do
     Pants::Writers::UDPWriter.new(ip, port, channel)
-  end
-
-  before do
-    subject.stub(:log)
   end
 
   describe "#start" do
@@ -112,11 +106,15 @@ describe Pants::Writers::UDPWriterConnection do
   end
 
   describe "#post_init" do
-    around do |example|
+    around(:each) do |example|
       EM.run do
         example.run
         EM.stop
       end
+    end
+
+    before do
+      channel.should_receive(:subscribe).and_yield(data).and_call_original
     end
 
     context "data is bigger than PACKET_SPLIT_THRESHOLD" do
