@@ -58,15 +58,17 @@ class Pants
         @info = file_path
         @file_path = file_path
 
+        log "Opening file '#{@file_path}'"
+        @file = File.open(@file_path, 'r')
+
         super(core_stopper_callback)
       end
 
       # Starts reading the file after all writers have been started.
       def start
         callback = EM.Callback do
-          log "Opening and adding file '#{@file_path}'..."
-          file = File.open(@file_path, 'r')
-          EM.attach(file, FileReaderConnection, @write_to_channel, starter, stopper)
+          log "Adding file '#{@file_path}'..."
+          EM.attach(@file, FileReaderConnection, @write_to_channel, starter, stopper)
         end
 
         super(callback)
