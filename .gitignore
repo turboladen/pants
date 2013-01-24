@@ -20,3 +20,4 @@ pants*.gem
 
 # IDE files
 .idea/
+atlassian-ide-plugin.xml
