@@ -185,23 +185,23 @@ class Pants
     #
     # @raise [Pants::Error] If no Reader is mapped to +scheme+.
     def new_reader_from_uri(uri, callback)
-      reader = if uri.nil?
+      reader_to_use = if uri.nil?
         Pants.readers.find { |reader| reader[:uri_scheme].nil? }
       else
         Pants.readers.find { |reader| reader[:uri_scheme] == uri.scheme }
       end
 
-      unless reader
+      unless reader_to_use
         raise ArgumentError, "No reader found with URI scheme: #{uri.scheme}"
       end
 
-      args = if reader[:args]
-        reader[:args].map { |arg| uri.send(arg) }
+      args = if reader_to_use[:args]
+        reader_to_use[:args].map { |arg| uri.send(arg) }
       else
         []
       end
 
-      reader[:klass].new(*args, callback)
+      reader_to_use[:klass].new(*args, callback)
     end
   end
 end

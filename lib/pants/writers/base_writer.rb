@@ -13,12 +13,6 @@ class Pants
     # readers to more easily remove your writer from them.
     class BaseWriter
 
-      # The block to be called when starting up a new Pants reader.
-      attr_reader :starter
-
-      # The block to be called when the reader is done reading.
-      attr_reader :stopper
-
       def initialize(read_from_channel)
         @running = false
         @read_from_channel = read_from_channel

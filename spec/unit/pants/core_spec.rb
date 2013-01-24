@@ -29,6 +29,7 @@ describe Pants::Core do
 
       it "creates the new reader and adds it to @readers" do
         uri = URI "test://somehost"
+
         subject.should_receive(:new_reader_from_uri) do |arg1, arg2|
           arg1.should == uri
           arg2.should be_a EM.Callback

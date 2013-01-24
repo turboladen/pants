@@ -7,11 +7,6 @@ class Pants
       include LogSwitch::Mixin
 
 
-      # The block to be called when starting up.  Writers should all have been
-      # added before calling this; if writers are started after this, they won't
-      # get the first bytes that are read (due to start-up time).
-      attr_reader :starter
-
       # Allows for adding "about me" info, depending on the reader type.  This
       # info is printed out when Pants starts, so you know get confirmation of
       # what you're about to do.  If you don't define this in your reader, nothing
@@ -36,6 +31,8 @@ class Pants
         @write_to_channel = EM::Channel.new
         @core_stopper_callback = core_stopper_callback
         @info ||= ""
+        @starter = nil
+        @stopper = nil
         @running = false
       end
 
@@ -169,6 +166,10 @@ class Pants
       #---------------------------------------------------------------------------
       protected
 
+      # The block to be called when starting up.  Writers should all have been
+      # added before calling this; if writers are started after this, they won't
+      # get the first bytes that are read (due to start-up time).
+      #
       # This is used internally by child Readers to signal that they're up and
       # running.  If implementing your own Reader, make sure to call this.
       def starter
@@ -234,23 +235,23 @@ class Pants
       # @raise [ArgumentError] If Pants.writers doesn't contain a mapping for the
       #   URI to a Writer class.
       def new_writer_from_uri(uri, read_from_channel)
-        writer = if uri.nil?
+        writer_to_use = if uri.nil?
           Pants.writers.find { |writer| writer[:uri_scheme].nil? }
         else
           Pants.writers.find { |writer| writer[:uri_scheme] == uri.scheme }
         end
 
-        unless writer
+        unless writer_to_use
           raise ArgumentError, "No writer found wth URI scheme: #{uri.scheme}"
         end
 
-        args = if writer[:args]
-          writer[:args].map { |arg| uri.send(arg) }
+        args = if writer_to_use[:args]
+          writer_to_use[:args].map { |arg| uri.send(arg) }
         else
           []
         end
 
-        writer[:klass].new(*args, read_from_channel)
+        writer_to_use[:klass].new(*args, read_from_channel)
       end
     end
   end
