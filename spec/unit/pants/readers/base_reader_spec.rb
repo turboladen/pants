@@ -236,4 +236,41 @@ describe Pants::Readers::BaseReader do
       end
     end
   end
+
+  describe "#new_writer_from_uri" do
+    let(:channel) do
+      double "EventMachine::Channel"
+    end
+
+    context "uri_scheme exists in Pants.writers" do
+      let(:test_writer) do
+        double "Pants::Writers::TestWriter"
+      end
+
+      let(:writers) do
+        [{ uri_scheme: 'test', klass: test_writer, args: [:host] }]
+      end
+
+      before do
+        Pants.stub(:writers).and_return writers
+      end
+
+      it "creates a new Writer based on the scheme mapping" do
+        uri = URI "test://testhost"
+        test_writer.should_receive(:new).with("testhost", channel)
+
+        subject.send(:new_writer_from_uri, uri, channel)
+      end
+    end
+
+    context "uri_scheme does not exist in writers" do
+      it "raises" do
+        uri = URI "bobo://host:1234/path"
+
+        expect {
+          subject.send(:new_writer_from_uri, uri, channel)
+        }.to raise_error(ArgumentError)
+      end
+    end
+  end
 end
