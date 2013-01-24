@@ -16,13 +16,8 @@ describe Pants::Readers::FileReader do
       double "File"
     end
 
-    let(:starter) do
-      double "EventMachine::DefaultDeferrable"
-    end
-
-    let(:stopper) do
-      double "EventMachine::DefaultDeferrable"
-    end
+    let(:starter) {  double "EventMachine::DefaultDeferrable" }
+    let(:stopper) {  double "EventMachine::DefaultDeferrable" }
 
     let(:callback) do
       double "EventMachine.Callback", call: true
@@ -46,6 +41,51 @@ describe Pants::Readers::FileReader do
       end
 
       subject.start
+    end
+  end
+end
+
+describe Pants::Readers::FileReaderConnection do
+  let(:channel) { double "EventMachine::Channel" }
+  let(:starter) { double "EventMachine::DefaultDeferrable starter" }
+  let(:stopper) { double "EventMachine::DefaultDeferrable stopper" }
+
+  subject do
+    Pants::Readers::FileReaderConnection.new(1, channel, starter, stopper)
+  end
+
+  describe "#post_init" do
+    let(:starter) do
+      double "EventMachine::DefaultDeferrable"
+    end
+
+    it "tells the starter that it's started" do
+      starter.should_receive(:succeed)
+      subject
+    end
+  end
+
+  describe "#receive_data" do
+    let(:data) { "some data" }
+
+    before do
+      Pants::Readers::FileReaderConnection.any_instance.stub(:post_init)
+    end
+
+    it "directly writes it to the channel" do
+      channel.should_receive(:<<).with(data)
+      subject.receive_data(data)
+    end
+  end
+
+  describe "#unbind" do
+    before do
+      Pants::Readers::FileReaderConnection.any_instance.stub(:post_init)
+    end
+
+    it "tells the stopper that it's stopped" do
+      stopper.should_receive(:succeed)
+      subject.unbind
     end
   end
 end

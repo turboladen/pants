@@ -34,7 +34,7 @@ class Pants
 
       # Called when the file is done being read.
       def unbind
-        log "Unbinding"
+        log "Unbinding, done writing, and notifying the stopper..."
         @stopper.succeed
       end
     end
