@@ -1,9 +1,10 @@
 GIT
   remote: git://github.com/turboladen/effing.git
-  revision: 42bb83561f5e915291c4a64a7052effb12c4ca21
+  revision: d86be0d780cf37778ae32161f859960bd6fa11f3
   specs:
     effing (0.1.0)
       ffi (>= 1.2.0)
+      log_switch (>= 0.4.0)
 
 PATH
   remote: .
@@ -36,7 +37,7 @@ GEM
       multi_json (~> 1.0)
       simplecov-html (~> 0.7.1)
     simplecov-html (0.7.1)
-    thor (0.16.0)
+    thor (0.17.0)
     yard (0.8.3)
 
 PLATFORMS
