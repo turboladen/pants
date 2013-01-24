@@ -168,6 +168,41 @@ describe Pants::Readers::BaseReader do
     end
   end
 
+  describe "#add_seam" do
+    context "klass doesn't exist" do
+      it "raises a NameError" do
+        expect {
+          subject.add_seam(BananaSplitPantsParty)
+        }.to raise_error NameError
+      end
+    end
+
+    context "klass exists" do
+      let(:channel) do
+        double "EventMachine::Channel"
+      end
+
+      let(:seam_class) do
+        s = double "Pants::Seam"
+        s.should_receive(:new).with(callback, channel).and_return(seam)
+
+        s
+      end
+
+      let(:seam) do
+        double "Pants::Seam"
+      end
+
+      before do
+        subject.instance_variable_set(:@write_to_channel, channel)
+      end
+
+      it "creates the new object and adds it to the internal list of writers" do
+        subject.add_seam(seam_class).should == seam
+      end
+    end
+  end
+
   describe "#stopper" do
     context "when called back with success" do
       before do

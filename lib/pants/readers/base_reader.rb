@@ -150,6 +150,16 @@ class Pants
         end
       end
 
+      # Allows for adding a Pants::Seam (or child) object to the reader's list
+      # of internal writers.  For more info on Seams, see the docs for
+      # Pants::Seam.
+      #
+      # @param [Pants::Seam] klass The class of the Pants::Seam object to
+      #   create.
+      #
+      # @return [Pants::Seam] The seam that was just created.
+      #
+      # @see Pants::Seam
       def add_seam(klass, *args)
         @writers << klass.new(@main_callback, @write_to_channel, *args)
 
