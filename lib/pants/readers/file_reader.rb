@@ -45,6 +45,9 @@ class Pants
     class FileReader < BaseReader
       include LogSwitch::Mixin
 
+      # @return [String] Path to the file that's being read.
+      attr_reader :file_path
+
       # @param [String] file_path Path to the file to read.
       #
       # @param [EventMachine::Callback] core_stopper_callback The Callback that will get
