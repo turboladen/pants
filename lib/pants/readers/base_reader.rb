@@ -37,8 +37,6 @@ class Pants
         @core_stopper_callback = core_stopper_callback
         @info ||= ""
         @running = false
-
-        start(main_callback) if EM.reactor_running?
       end
 
       # Starts all of the writers, then starts the reader.  Child readers must
