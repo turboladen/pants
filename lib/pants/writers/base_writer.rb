@@ -24,6 +24,7 @@ class Pants
         @read_from_channel = read_from_channel
         @starter = nil
         start if EM.reactor_running?
+        @stopper = nil
       end
 
       def start
