@@ -22,6 +22,7 @@ class Pants
       def initialize(read_from_channel)
         @running = false
         @read_from_channel = read_from_channel
+        @starter = nil
         start if EM.reactor_running?
       end
 
