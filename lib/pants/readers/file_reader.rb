@@ -11,8 +11,11 @@ class Pants
 
       # @param [EventMachine::Channel] write_to_channel The data channel to write
       #   read data to.
+
+      # @param [EventMachine::Callback] starter Gets called when the
+      #   it's been fulling initialized.
       #
-      # @param [EventMachine::Deferrable] stopper Gets set to succeeded when the
+      # @param [EventMachine::Callback] stopper Gets called when the
       #   file-to-read has been fully read.
       def initialize(write_to_channel, starter, stopper)
         @write_to_channel = write_to_channel
@@ -21,7 +24,7 @@ class Pants
       end
 
       def post_init
-        @starter.succeed
+        @starter.call
       end
 
       # Reads the data and writes it to the data channel.
@@ -35,7 +38,7 @@ class Pants
       # Called when the file is done being read.
       def unbind
         log "Unbinding, done writing, and notifying the stopper..."
-        @stopper.succeed
+        @stopper.call
       end
     end
 

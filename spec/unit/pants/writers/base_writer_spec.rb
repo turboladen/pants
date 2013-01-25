@@ -13,7 +13,7 @@ describe Pants::Writers::BaseWriter do
     context "@starter not yet defined" do
       it "creates a new deferrable that sets @running to true" do
         subject.should_not be_running
-        subject.starter.succeed
+        subject.starter.call
         subject.should be_running
       end
     end
@@ -27,7 +27,7 @@ describe Pants::Writers::BaseWriter do
 
       it "creates a new deferrable that sets @running to false" do
         subject.should be_running
-        subject.stopper.succeed
+        subject.stopper.call
         subject.should_not be_running
       end
     end

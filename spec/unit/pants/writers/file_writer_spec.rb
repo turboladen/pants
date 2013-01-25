@@ -19,8 +19,8 @@ describe Pants::Writers::FileWriter do
     end
 
     let(:stopper) do
-      s = double "EventMachine::DefaultDeferrable"
-      s.should_receive(:succeed)
+      s = double "EventMachine::Callback"
+      s.should_receive(:call)
 
       s
     end

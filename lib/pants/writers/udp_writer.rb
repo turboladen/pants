@@ -109,7 +109,7 @@ class Pants
             @read_from_channel, @write_ip, @write_port)
 
           start_loop = EM.tick_loop { :stop if @connection }
-          start_loop.on_stop { starter.succeed }
+          start_loop.on_stop { starter.call }
         end
       end
 
@@ -117,7 +117,7 @@ class Pants
       def stop
         log "Finishing ID #{__id__}"
         @connection.close_connection_after_writing
-        stopper.succeed
+        stopper.call
       end
     end
   end

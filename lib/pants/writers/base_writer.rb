@@ -31,37 +31,19 @@ class Pants
       # This should get called with #succeed after the writer is sure to be up
       # and running, ready for accepting data.
       #
-      # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
+      # @return [EventMachine::Callback] The Callback that should get
       #   called.
-      # @todo Use Callback instead of DefaultDeferrable
       def starter
-        return @starter if @starter
-
-        @starter = EM::DefaultDeferrable.new
-
-        @starter.callback do
-          @running = true
-        end
-
-        @starter
+        @starter ||= EM.Callback { @running = true }
       end
 
-      # This should get caled with #succeed after the writer is done writing
+      # This should get called with #succeed after the writer is done writing
       # out the data in its channel.
       #
-      # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
+      # @return [EventMachine::Callback] The Callback that should get
       #   called.
-      # @todo Use Callback instead of DefaultDeferrable
       def stopper
-        return @stopper if @stopper
-
-        @stopper = EM::DefaultDeferrable.new
-
-        @stopper.callback do
-          @running = false
-        end
-
-        @stopper
+        @stopper ||= EM.Callback { @running = false }
       end
 
       def running?

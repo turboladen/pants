@@ -26,7 +26,7 @@ class Pants
       def stop
         log "Finishing ID #{__id__} and closing file #{@file}"
         @file.close unless @file.closed?
-        stopper.succeed
+        stopper.call
       end
 
       def start
@@ -49,7 +49,7 @@ class Pants
           end
 
           start_loop = EM.tick_loop { :stop unless @file.closed? }
-          start_loop.on_stop { starter.succeed }
+          start_loop.on_stop { starter.call }
         end
       end
     end

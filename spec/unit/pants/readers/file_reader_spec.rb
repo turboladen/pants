@@ -25,8 +25,8 @@ describe Pants::Readers::FileReader do
 
   describe "#start" do
     let(:file) { double "File" }
-    let(:starter) { double "EventMachine::DefaultDeferrable" }
-    let(:stopper) { double "EventMachine::DefaultDeferrable" }
+    let(:starter) { double "EventMachine::Callback starter" }
+    let(:stopper) { double "EventMachine::Callback stopper" }
 
     before do
       File.should_receive(:open).and_return(file)
@@ -52,20 +52,18 @@ end
 
 describe Pants::Readers::FileReaderConnection do
   let(:channel) { double "EventMachine::Channel" }
-  let(:starter) { double "EventMachine::DefaultDeferrable starter" }
-  let(:stopper) { double "EventMachine::DefaultDeferrable stopper" }
+  let(:starter) { double "EventMachine::Callback starter" }
+  let(:stopper) { double "EventMachine::Callback stopper" }
 
   subject do
     Pants::Readers::FileReaderConnection.new(1, channel, starter, stopper)
   end
 
   describe "#post_init" do
-    let(:starter) do
-      double "EventMachine::DefaultDeferrable"
-    end
+    let(:starter) { double "EventMachine::Callback" }
 
     it "tells the starter that it's started" do
-      starter.should_receive(:succeed)
+      starter.should_receive(:call)
       subject
     end
   end
@@ -89,7 +87,7 @@ describe Pants::Readers::FileReaderConnection do
     end
 
     it "tells the stopper that it's stopped" do
-      stopper.should_receive(:succeed)
+      stopper.should_receive(:call)
       subject.unbind
     end
   end

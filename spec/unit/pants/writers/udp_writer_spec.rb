@@ -14,8 +14,8 @@ describe Pants::Writers::UDPWriter do
 
   describe "#start" do
     let(:starter) do
-      s = double "EventMachine::DefaultDeferrable"
-      s.should_receive(:succeed)
+      s = double "EventMachine::Callback"
+      s.should_receive(:call)
 
       s
     end
@@ -51,8 +51,8 @@ describe Pants::Writers::UDPWriter do
     end
 
     let(:stopper) do
-      s = double "EventMachine::DefaultDeferrable"
-      s.should_receive(:succeed)
+      s = double "EventMachine::Callback"
+      s.should_receive(:call)
 
       s
     end

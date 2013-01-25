@@ -56,8 +56,8 @@ describe Pants::Readers::BaseReader do
 
   describe "#stop!" do
     let(:stopper) do
-      s = double "EventMachine::DefaultDeferrable"
-      s.should_receive(:succeed)
+      s = double "EventMachine::Callback"
+      s.should_receive(:call)
 
       s
     end
@@ -239,7 +239,7 @@ describe Pants::Readers::BaseReader do
         test_writer.should_receive(:running?)
         test_writer.should_receive(:stop)
 
-        subject.send(:stopper).set_deferred_success
+        subject.send(:stopper).call
       end
     end
   end

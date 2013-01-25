@@ -65,7 +65,7 @@ class Pants
       # (i.e. like an open socket), this gets called by OS signals (i.e. if you
       # ctrl-c).
       def stop!
-        stopper.succeed
+        stopper.call
       end
 
       # @return [Boolean]
@@ -173,28 +173,18 @@ class Pants
       # This is used internally by child Readers to signal that they're up and
       # running.  If implementing your own Reader, make sure to call this.
       def starter
-        return @starter if @starter
-
-        @starter = EM::DefaultDeferrable.new
-
-        @starter.callback do
-          @running = true
-        end
-
-        @starter
+        @starter ||= EM.Callback { @running = true }
       end
 
       # The callback that gets called when the Reader is done reading.  Tells all
       # of the associated writers to finish up.
       #
-      # @return [EventMachine::DefaultDeferrable] The Deferrable that should get
+      # @return [EventMachine::Callback] The Callback that should get
       #   called by any Reader when it's done reading.
       def stopper
         return @stopper if @stopper
 
-        @stopper = EM::DefaultDeferrable.new
-
-        @stopper.callback do
+        @stopper = EM.Callback do
           log "Got called back after finished reading.  Starting shutdown..."
 
           # remove this next_tick?

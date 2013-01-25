@@ -29,7 +29,7 @@ class Pants
     def start(callback)
       super(callback)
 
-      starter.succeed
+      starter.call
     end
 
     # Make sure you call this (with super()) in your child to ensure read and
@@ -47,7 +47,7 @@ class Pants
         end
       end
 
-      finish_loop.on_stop { stopper.succeed }
+      finish_loop.on_stop { stopper.call }
     end
 
     # Call this to read data that was put into the read queue.  It yields one
