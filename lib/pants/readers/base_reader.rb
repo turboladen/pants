@@ -7,11 +7,6 @@ class Pants
       include LogSwitch::Mixin
 
 
-      # Allows for adding "about me" info, depending on the reader type.  This
-      # info is printed out when Pants starts, so you know get confirmation of
-      # what you're about to do.  If you don't define this in your reader, nothing
-      # will be printed out.
-      attr_reader :info
 
       attr_reader :writers
 
@@ -30,7 +25,7 @@ class Pants
         @writers = []
         @write_to_channel = EM::Channel.new
         @core_stopper_callback = core_stopper_callback
-        @info ||= ""
+        @read_object ||= nil
         @starter = nil
         @stopper = nil
         @running = false
@@ -66,6 +61,21 @@ class Pants
       # ctrl-c).
       def stop!
         stopper.call
+      end
+
+      # Allows for adding "about me" info, depending on the reader type.  This
+      # info is printed out when Pants starts, so you know get confirmation of
+      # what you're about to do.  If you don't define this in your reader, nothing
+      # will be printed out.
+      #
+      # @return [String] A String that identifies what the reader is reading
+      #   from.
+      def read_object
+        if @read_object
+          @read_object
+        else
+          warn "No read_object info has been defined for this reader."
+        end
       end
 
       # @return [Boolean]

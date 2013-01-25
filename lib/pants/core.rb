@@ -104,7 +104,7 @@ class Pants
         puts ">> Reading from #{@readers.size} readers"
 
         @readers.each_with_index do |reader, i|
-          puts ">> reader#{i}:  Starting read on: #{reader.info}"
+          puts ">> reader#{i}:  Starting read on: #{reader.read_object}"
           puts ">> reader#{i}:  Writing to #{reader.writers.size} writers"
 
           reader.writers.each_with_index do |writer, j|

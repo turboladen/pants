@@ -43,8 +43,9 @@ describe Pants::Core do
   describe "#run" do
     let(:reader) do
       r = double "Pants::TestReader"
-      r.stub(:info)
+      r.stub(:read_object)
       r.stub_chain(:writers, :size)
+      r.stub_chain(:writers, :each_with_index)
 
       r
     end

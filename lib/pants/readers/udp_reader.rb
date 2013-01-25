@@ -56,7 +56,7 @@ class Pants
       #   to stop reading this I/O, #stopper is never called internally; it must
       #   be called externally.
       def initialize(read_ip, read_port, core_stopper_callback)
-        @info = "udp://#{read_ip}:#{read_port}"
+        @read_object = "udp://#{read_ip}:#{read_port}"
         @read_ip = read_ip
         @read_port = read_port
 

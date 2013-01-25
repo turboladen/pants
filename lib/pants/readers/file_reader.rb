@@ -58,7 +58,7 @@ class Pants
       #   file has been read and pushed to the channel.
       def initialize(file_path, core_stopper_callback)
         log "Initializing #{self.class} with file path '#{file_path}'"
-        @info = file_path
+        @read_object = file_path
         @file_path = file_path
 
         log "Opening file '#{@file_path}'"
