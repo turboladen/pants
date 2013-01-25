@@ -30,6 +30,24 @@ Separate multiple destinations by a space:
 
     Pants.read(read_uri, &add_writers)
   end
+
+  desc "version", "print the version of pants"
+  def version
+    puts <<-INFO
+---------------------------
+---------------------------     # => https://github.com/turboladen/pants
+|           | |           |     # => #{RUBY_DESCRIPTION}
+|           | |           |
+|           |_|           |
+|           / \\           |
+|          |   |          |
+|          |   |          |
+|          |   |          |
+|          |   |          |
+|__________|   |__________|
+
+INFO
+  end
 end
 
 
