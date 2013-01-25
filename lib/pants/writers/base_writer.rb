@@ -64,6 +64,7 @@ class Pants
         @stopper ||= EM.Callback { @running = false }
       end
 
+      # @return [Boolean] Is the Writer writing data?
       def running?
         @running
       end
