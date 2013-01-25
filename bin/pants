@@ -1,30 +1,34 @@
 #!/usr/bin/env ruby
 
+
 require 'thor'
-require 'uri'
 require_relative '../lib/pants'
+require_relative '../lib/pants/version'
+
 
 class PantsRunner < Thor
-  desc "split [URI]", "read on the URI and send to --destinations"
+  desc "dup [URI]", "read on the URI and send to --destinations"
   long_desc <<-LONGDESC
 This will read in any data given by the URI and redirect it to all of the I/O\x5
 objects given by --destinations.  Specify all I/O objects as URIs in the form:\x5
 
   udp://127.0.0.1:1234, file:///home/bob/BarrellRoll.avi
 
+...although files can be given without using the URI form.
+
 Separate multiple destinations by a space:
 
-  $ pants udp://127.0.0.1:1234 --destinations=udp://239.0.0.1:1234 udp://10.0.0.1:1234
+  $ pants udp://127.0.0.1:1234 --dest=udp://239.0.0.1:1234 udp://10.0.0.1:1234
 
   LONGDESC
-  option :destinations, type: :array, required: true
+  option :dest, type: :array, required: true
   option :verbose, type: :boolean
-  def split(read_uri)
+  def dup(read_uri)
     Pants.log = options[:verbose] ? true : false
 
-    add_writers = lambda do |seem|
-      options[:destinations].each do |write_uri|
-        seem.add_writer(write_uri)
+    add_writers = lambda do |reader|
+      options[:dest].each do |write_uri|
+        reader.write_to(write_uri)
       end
     end
 
@@ -35,6 +39,7 @@ Separate multiple destinations by a space:
   def version
     puts <<-INFO
 ---------------------------
+|    ||      O     ||     |     # => pants v#{Pants::VERSION}
 ---------------------------     # => https://github.com/turboladen/pants
 |           | |           |     # => #{RUBY_DESCRIPTION}
 |           | |           |
