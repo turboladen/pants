@@ -19,6 +19,7 @@ class Pants
       def initialize(file_path, read_from_channel)
         @file = file_path.is_a?(File) ? file_path : File.open(file_path, 'w')
         @file_path = file_path
+        @write_object = @file_path
 
         super(read_from_channel)
       end

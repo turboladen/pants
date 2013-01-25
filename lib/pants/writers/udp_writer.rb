@@ -96,6 +96,7 @@ class Pants
         @write_ip = write_ip
         @write_port = write_port
         @connection = nil
+        @write_object = "udp://#{@write_ip}:#{@write_port}"
 
         super(read_from_channel)
       end
