@@ -3,6 +3,8 @@ require 'socket'
 
 
 class Pants
+
+  # Methods that are shared by Readers and Writers that deal with networking.
   module NetworkHelpers
 
     private
