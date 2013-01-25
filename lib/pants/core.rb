@@ -101,12 +101,15 @@ class Pants
 
       starter = proc do
         puts "Pants v#{Pants::VERSION}"
-        puts "Reader from #{@readers.size} readers"
+        puts ">> Reading from #{@readers.size} readers"
 
         @readers.each_with_index do |reader, i|
-          puts "Reader #{i + 1}:"
-          puts "\tStarting read on: #{reader.info}"
-          puts "\tWriting to #{reader.writers.size} writers"
+          puts ">> reader#{i}:  Starting read on: #{reader.info}"
+          puts ">> reader#{i}:  Writing to #{reader.writers.size} writers"
+
+          reader.writers.each_with_index do |writer, j|
+            puts ">> reader#{i}writer#{j}:  #{writer.write_object}"
+          end
         end
 
         EM::Iterator.new(@readers).each do |reader, iter|
@@ -127,7 +130,7 @@ class Pants
     # Tells the reader to signal to its writers that it's time to finish.
     def stop!
       puts "Stop called.  Closing readers and writers..."
-      #@readers.each { |reader| reader.stopper.set_deferred_success }
+
       if @readers.none?(&:running?)
         puts "No readers are running; nothing to do."
       else
