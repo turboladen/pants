@@ -16,6 +16,7 @@ class Pants
 
   DEFAULT_URI_TO_WRITER_MAP = [
     { uri_scheme: nil, klass: Pants::Writers::FileWriter, args: [:path] },
+    { uri_scheme: 'file', klass: Pants::Writers::FileWriter, args: [:path] },
     { uri_scheme: 'udp', klass: Pants::Writers::UDPWriter, args: [:host, :port] }
   ]
 
