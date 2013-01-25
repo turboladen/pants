@@ -207,6 +207,7 @@ class Pants
 
             start_loop.on_stop do
               @running = false
+              puts ">> All done reading on '#{@read_object}'."
               @core_stopper_callback.call
             end
 
