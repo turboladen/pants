@@ -1,11 +1,3 @@
-GIT
-  remote: git://github.com/turboladen/effing.git
-  revision: d86be0d780cf37778ae32161f859960bd6fa11f3
-  specs:
-    effing (0.1.0)
-      ffi (>= 1.2.0)
-      log_switch (>= 0.4.0)
-
 PATH
   remote: .
   specs:
@@ -20,8 +12,6 @@ GEM
     diff-lcs (1.1.3)
     eventmachine (1.0.0)
     eventmachine (1.0.0-java)
-    ffi (1.3.1)
-    ffi (1.3.1-java)
     log_switch (0.4.0)
     multi_json (1.5.0)
     rake (10.0.3)
@@ -45,7 +35,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  effing!
   pants!
   rake
   rspec (>= 2.6.0)
