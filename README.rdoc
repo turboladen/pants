@@ -218,10 +218,10 @@ handle a varying number of clients, you can add and remove writers at will:
 
 The examples from above can also be run via the command-line app like this:
 
-  $ pants udp://0.0.0.0:1234 --destinations=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
-  $ pants udp://239.0.0.1:1234 --destinations=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
-  $ pants udp://0.0.0.0:1234 --destinations=udp://10.0.0.10:1234 file:///home/me/socket_data.raw
-  $ pants /home/me/socket_data.raw --destinations=udp://10.0.0.10:1234 udp://239.0.0.1:1234
+  $ pants udp://0.0.0.0:1234 --dest=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
+  $ pants udp://239.0.0.1:1234 --dest=udp://10.0.0.10:1234 udp://10.0.0.11:1234 udp://10.0.0.11:2345
+  $ pants udp://0.0.0.0:1234 --dest=udp://10.0.0.10:1234 file:///home/me/socket_data.raw
+  $ pants /home/me/socket_data.raw --dest=udp://10.0.0.10:1234 udp://239.0.0.1:1234
 
 ==== Use a seam to inspect and alter packets
 
