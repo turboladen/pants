@@ -4,8 +4,9 @@ Dir[File.dirname(__FILE__) + "/readers/*.rb"].each { |f| require f }
 Dir[File.dirname(__FILE__) + "/writers/*.rb"].each { |f| require f }
 require_relative 'pants/seam'
 
-# Pants sort of mimics Linux's +splice+ command/call by taking a reader (the input) and
-# redirects it to multiple writers (the outputs).
+
+# This base class provides some helpers for doing quick, non-complex reading
+# and writing.  Check docs on readers and writers for more information.
 class Pants
 
   DEFAULT_URI_TO_READER_MAP = [
@@ -38,7 +39,7 @@ class Pants
   # hassle, you can add your reader using a different method.  See the docs for
   # Pants::Core for more info.
   #
-  # @return [Array] The list of mappings.
+  # @return [Array<Hash>] The list of mappings.
   def self.readers
     @readers ||= DEFAULT_URI_TO_READER_MAP
   end
@@ -46,7 +47,7 @@ class Pants
   # The list of mappings of URIs to Writer class types.  See the docs for
   # .readers for more info.
   #
-  # @return [Array] The list of mappings.
+  # @return [Array<Hash>] The list of mappings.
   # @see Pants.readers
   def self.writers
     @writers ||= DEFAULT_URI_TO_WRITER_MAP
