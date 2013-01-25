@@ -1,5 +1,4 @@
 require 'eventmachine'
-require 'socket'
 require_relative 'base_reader'
 require_relative '../network_helpers'
 
