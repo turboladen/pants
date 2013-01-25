@@ -39,5 +39,4 @@ DEPENDENCIES
   rake
   rspec (>= 2.6.0)
   simplecov
-  thor
   yard (>= 0.7.2)
