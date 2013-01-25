@@ -2,11 +2,33 @@ require_relative 'readers/base_reader'
 
 
 class Pants
+
+  # A Seam is a core Pants object type (like Readers and Writers) that lets you
+  # attach to a Reader, work with the read data, and pass it on to attached
+  # Writers.  It implements buffering by using EventMachine Queues: pop data
+  # off the @read_queue, work with it, then push it onto the @write_queue.  Once
+  # on the @write_queue, the Seam will pass on to all Writers that have been
+  # added to it.
+  #
+  # The @read_queue is wrapped by #read_items, which yields data
+  # chunks from the Reader in, allowing easy access to each bit of data as it
+  # was when it was read in.  The @write_queue is wrapped by #write, which
+  # lets you just give it the data you want to pass on to the attached Writers.
+  #
+  # Seams are particularly useful for working with network data, where if you're
+  # redirecting traffic from one place to another, you may need to alter data
+  # in those packets to make it useful to the receiving ends.
   class Seam < Pants::Readers::BaseReader
     include LogSwitch::Mixin
 
+    # @return [EventMachine::Channel] The channel that Writers subscribe to.
     attr_reader :channel_for_writers
 
+    # @param [EventMachine::Callback] core_stopper_callback The callback that's
+    #   provided by Core.
+    #
+    # @param [EventMachine::Channel] reader_channel The channel from the Reader
+    #   that the Seam is attached to.
     def initialize(core_stopper_callback, reader_channel)
       @read_queue = EM::Queue.new
       @write_queue = EM::Queue.new
