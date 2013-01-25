@@ -3,6 +3,7 @@
 * https://github.com/turboladen/pants
 
 {<img src="https://travis-ci.org/turboladen/pants.png?branch=master" alt="Build Status" />}[https://travis-ci.org/turboladen/pants]
+{<img src="https://codeclimate.com/badge.png" />}[https://codeclimate.com/github/turboladen/pants]
 
 == DESCRIPTION:
 
