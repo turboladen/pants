@@ -14,12 +14,9 @@ pipes (like splice and tee).
 
 == FEATURES/PROBLEMS:
 
-<b>A)</b> Read raw data from a
+Read raw data from a
 * file
 * UDP socket (unicast or multicast)
-
-...or <b>B)</b> demultiplex a stream from a
-* A/V file
 
 ...and write to any number and combination of
 * files
