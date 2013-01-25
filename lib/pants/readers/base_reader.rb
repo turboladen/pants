@@ -6,12 +6,15 @@ class Pants
     class BaseReader
       include LogSwitch::Mixin
 
-
-
+      # @return [Array] The list of Writers attached to the Reader.
       attr_reader :writers
 
+      # @return [EventMachine::Channel] The channel that Writers should subscribe
+      #   to.
       attr_reader :write_to_channel
 
+      # @return [EventMachine::Callback] The callback from Core that should be
+      #   called when the Reader is done reading.
       attr_reader :core_stopper_callback
 
       # @param [EventMachine::Callback] core_stopper_callback This gets called when all
