@@ -47,18 +47,18 @@ class Pants
     class UDPReader < BaseReader
       include LogSwitch::Mixin
 
-      # @param [String] read_ip The IP address to read on.
+      # @param [String] host The IP address to read on.
       #
-      # @param [Fixnum] read_port The UDP port to read on.
+      # @param [Fixnum] port The UDP port to read on.
       #
       # @param [EventMachine::Callback] core_stopper_callback The Callback that will get
       #   called when #stopper is called.  Since there is no clear end to when
       #   to stop reading this I/O, #stopper is never called internally; it must
       #   be called externally.
-      def initialize(read_ip, read_port, core_stopper_callback)
-        @read_object = "udp://#{read_ip}:#{read_port}"
-        @read_ip = read_ip
-        @read_port = read_port
+      def initialize(host, port, core_stopper_callback)
+        @read_object = "udp://#{host}:#{port}"
+        @host = host
+        @port = port
 
         super(core_stopper_callback)
       end
@@ -66,8 +66,8 @@ class Pants
       # Starts reading on the UDP IP and port and pushing packets to the channel.
       def start
         callback = EM.Callback do
-          log "Adding a #{self.class} at #{@read_ip}:#{@read_port}..."
-          EM.open_datagram_socket(@read_ip, @read_port, UDPReaderConnection,
+          log "Adding a #{self.class} at #{@host}:#{@port}..."
+          EM.open_datagram_socket(@host, @port, UDPReaderConnection,
             @write_to_channel, starter)
         end
 

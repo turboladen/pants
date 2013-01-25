@@ -138,20 +138,54 @@ class Pants
 
       # Removes a writer object from the internal list of writers.
       #
-      # @example
+      # @example Using URI
+      #   reader.writers    # => [<Pants::Writers::FileWriter @file_path='./testfile'...>]
+      #   reader.remove_writer('./testfile')
+      #   reader.writers    # => []
+      #
+      # @example Using class and args as key/value pairs
       #   reader.writers    # => [<Pants::Writers::FileWriter @file_path='./testfile'...>]
       #   reader.remove_writer(Pants::Writers::FileWriter, file_path: './testfile')
       #   reader.writers    # => []
       #
-      # @param [Class] klass Class of the writer to remove.
+      # @param [Class] obj Class of the writer to remove.
       #
       # @param [Hash] key_value_pairs Keys are methods to be called on each
       #   writer and will be checked to see if the return value from that method
       #   equals the given value.
-      def remove_writer(klass, key_value_pairs)
-        @writers.delete_if do |writer|
-          writer.is_a?(klass) &&
-            key_value_pairs.all? { |k, v| writer.send(k) == v }
+      def remove_writer(obj, key_value_pairs=nil)
+        if obj.is_a? Class
+          @writers.delete_if do |writer|
+            writer.is_a?(obj) &&
+              key_value_pairs.all? { |k, v| writer.send(k) == v }
+          end
+        elsif obj.is_a? String
+          writer = begin
+            uri = obj.is_a?(URI) ? obj : URI(obj)
+          rescue URI::InvalidURIError
+            find_writer_from_uri(nil)
+          else
+            find_writer_from_uri(uri)
+          end
+
+          unless writer
+            raise ArgumentError, "No writer found wth URI scheme: #{uri.scheme}"
+          end
+
+          key_value_pairs = if writer[:args]
+            writer[:args].inject({}) do |result, arg|
+              result[arg] = uri.send(arg)
+
+              result
+            end
+          else
+            {}
+          end
+
+          @writers.delete_if do |w|
+            w.is_a?(writer[:klass]) &&
+              key_value_pairs.all? { |k, v| w.send(k) == v }
+          end
         end
       end
 
@@ -236,11 +270,7 @@ class Pants
       # @raise [ArgumentError] If Pants.writers doesn't contain a mapping for the
       #   URI to a Writer class.
       def new_writer_from_uri(uri, read_from_channel)
-        writer_to_use = if uri.nil?
-          Pants.writers.find { |writer| writer[:uri_scheme].nil? }
-        else
-          Pants.writers.find { |writer| writer[:uri_scheme] == uri.scheme }
-        end
+        writer_to_use = find_writer_from_uri(uri)
 
         unless writer_to_use
           raise ArgumentError, "No writer found wth URI scheme: #{uri.scheme}"
@@ -253,6 +283,16 @@ class Pants
         end
 
         writer_to_use[:klass].new(*args, read_from_channel)
+      end
+
+      # @param [URI] uri The URI that defines the Writer.
+      # @return [Hash] The Hash from Pants.writers that matches the URI.
+      def find_writer_from_uri(uri)
+        if uri.nil?
+          Pants.writers.find { |writer| writer[:uri_scheme].nil? }
+        else
+          Pants.writers.find { |writer| writer[:uri_scheme] == uri.scheme }
+        end
       end
     end
   end

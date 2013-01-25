@@ -82,32 +82,32 @@ class Pants
       include LogSwitch::Mixin
 
       # @return [String] The IP address that's being written to.
-      attr_reader :write_ip
+      attr_reader :host
 
       # @return [Fixnum] The port that's being written to.
-      attr_reader :write_port
+      attr_reader :port
 
-      # @param [String] write_ip
+      # @param [String] host
       #
-      # @param [Fixnum] write_port
+      # @param [Fixnum] port
       #
       # @param [EventMachine::Channel] read_from_channel
-      def initialize(write_ip, write_port, read_from_channel)
-        @write_ip = write_ip
-        @write_port = write_port
+      def initialize(host, port, read_from_channel)
+        @host = host
+        @port = port
         @connection = nil
-        @write_object = "udp://#{@write_ip}:#{@write_port}"
+        @write_object = "udp://#{@host}:#{@port}"
 
         super(read_from_channel)
       end
 
       # Readies the writer for data to write and waits for data to write.
       def start
-        log "#{__id__} Adding a #{self.class} at #{@write_ip}:#{@write_port}..."
+        log "#{__id__} Adding a #{self.class} at #{@host}:#{@port}..."
 
         EM.defer do
           @connection = EM.open_datagram_socket('0.0.0.0', 0, UDPWriterConnection,
-            @read_from_channel, @write_ip, @write_port)
+            @read_from_channel, @host, @port)
 
           start_loop = EM.tick_loop { :stop if @connection }
           start_loop.on_stop { starter.call }

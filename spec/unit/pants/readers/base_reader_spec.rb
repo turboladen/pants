@@ -131,45 +131,102 @@ describe Pants::Readers::BaseReader do
     end
   end
 
-  describe "#remove_writer" do
+  describe '#remove_writer' do
     before do
       subject.instance_variable_set(:@writers, writers)
     end
 
-    let(:writers) do
-      [String.new, Hash.new, Array.new]
-    end
+    context "using URI" do
+      let(:writer1) do
+        double "Pants::Writers::FileWriter", file_path: "file1"
+      end
 
-    context "@writers doesn't contain a writer by the given class" do
-      it "doesn't remove anything" do
-        subject.remove_writer(URI, {})
-        subject.writers.size.should be 3
+      let(:writer2) do
+        double "Pants::Writers::FileWriter", file_path: "file2"
+      end
+
+      let(:writer3) do
+        double "Pants::Writers::UDPWriter",
+          host: '127.0.0.1',
+          port: 1234
+      end
+
+      let(:writer4) do
+        double "Pants::Writers::UDPWriter",
+          host: '127.0.0.2',
+          port: 1234
+      end
+
+      let(:writers) { [writer1, writer2, writer3, writer4] }
+
+      context "Pants.writers doesn't define a writer by the given scheme" do
+        it "raises an ArgumentError" do
+          expect {
+            subject.remove_writer("http://1.2.3.4")
+          }.to raise_error ArgumentError
+        end
+      end
+
+      context "@writers contains a writer type by the given URI" do
+        before do
+          writer1.should_receive(:is_a?).with(Pants::Writers::UDPWriter).and_return(false)
+          writer2.should_receive(:is_a?).with(Pants::Writers::UDPWriter).and_return(false)
+          writer3.should_receive(:is_a?).with(Pants::Writers::UDPWriter).and_return(true)
+          writer4.should_receive(:is_a?).with(Pants::Writers::UDPWriter).and_return(true)
+        end
+
+        context "but doesn't match criteria given by the URI" do
+          it "doesn't remove anything" do
+            subject.remove_writer("udp://127.0.0.1:9000")
+            subject.writers.should be writers
+          end
+        end
+
+        context "and criteria matches given key_value_pairs" do
+          it "removes the matching object" do
+            subject.remove_writer("udp://127.0.0.1:1234")
+            subject.writers.should == [writer1, writer2, writer4]
+          end
+        end
       end
     end
 
-    context "@writers contains a writer by the given class" do
-      context "but doesn't match criteria given by key_value_pairs" do
+    context "using class and args" do
+      let(:writers) do
+        [String.new, Hash.new, Array.new]
+      end
+
+      context "@writers doesn't contain a writer by the given class" do
         it "doesn't remove anything" do
-          subject.remove_writer(String, size: 1)
+          subject.remove_writer(URI, {})
           subject.writers.size.should be 3
         end
       end
 
-      context "and criteria matches given key_value_pairs" do
-        it "removes the matching object" do
-          subject.remove_writer(String, size: 0)
-          subject.writers.size.should be 2
-        end
-      end
-
-      context "and criteria of more than 1 object matches given key_value_pairs" do
-        let(:writers) do
-          [String.new, String.new, String.new]
+      context "@writers contains a writer by the given class" do
+        context "but doesn't match criteria given by key_value_pairs" do
+          it "doesn't remove anything" do
+            subject.remove_writer(String, size: 1)
+            subject.writers.size.should be 3
+          end
         end
 
-        it "removes the matching object" do
-          subject.remove_writer(String, size: 0)
-          subject.writers.size.should be 0
+        context "and criteria matches given key_value_pairs" do
+          it "removes the matching object" do
+            subject.remove_writer(String, size: 0)
+            subject.writers.size.should be 2
+          end
+        end
+
+        context "and criteria of more than 1 object matches given key_value_pairs" do
+          let(:writers) do
+            [String.new, String.new, String.new]
+          end
+
+          it "removes the matching object" do
+            subject.remove_writer(String, size: 0)
+            subject.writers.size.should be 0
+          end
         end
       end
     end
