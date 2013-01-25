@@ -9,9 +9,15 @@ require_relative 'seam'
 
 
 class Pants
+
+  # A single Core object is necessary for Pants to run.  Root-level readers are
+  # attached to the core, then writers are attached to those readers.  It's
+  # main job, other than giving a home to readers, is to handle the order of
+  # starting up and shutting of the readers and writers so that no data is lost.
   class Core
     include LogSwitch::Mixin
 
+    # @return [Array] The list of readers that are reading data.
     attr_reader :readers
 
     def initialize(&block)
