@@ -21,9 +21,6 @@ class Pants
   class Seam < Pants::Readers::BaseReader
     include LogSwitch::Mixin
 
-    # @return [EventMachine::Channel] The channel that Writers subscribe to.
-    attr_reader :channel_for_writers
-
     # @param [EventMachine::Callback] core_stopper_callback The callback that's
     #   provided by Core.
     #
@@ -32,6 +29,7 @@ class Pants
     def initialize(core_stopper_callback, reader_channel)
       @read_queue = EM::Queue.new
       @write_queue = EM::Queue.new
+      @write_object ||= nil
 
       @receives = 0
       @reads = 0
@@ -70,6 +68,16 @@ class Pants
       end
 
       finish_loop.on_stop { stopper.call }
+    end
+
+    # @return [String] A String that identifies what the writer is writing to.
+    #   This is simply used for displaying info to the user.
+    def write_object
+      if @write_object
+        @write_object
+      else
+        warn "No write_object info has been defined for this writer."
+      end
     end
 
     # Call this to read data that was put into the read queue.  It yields one

@@ -222,58 +222,61 @@ The examples from above can also be run via the command-line app like this:
 
 ==== Use a seam to inspect and alter packets
 
+    require 'pants'
 
-  class PacketInspector < Pants::Seam
-    def initialize(host)
-      @host = host
-    end
+    class PantsInspector < Pants::Seam
+      def initialize(core_callback, reader_channel, host)
+        @host = host
 
-    # Pants will call this for you when it starts the reader that the seam is
-    # reading from.
-    def start
-
-      # You need to define a callback here so pants can call you back after its
-      # made sure that the seam's writers have been started.  This makes sure
-      # the seam doesn't start reading and pushing out data before the writers
-      # are ready to receive it.
-      callback = EM.Callback do
-        puts "Starting #{self.class}..."
-
-        read do |data|
-          unless data.match(/pants/)
-            data << "Pants party at #{@host}!!!!!!"
-          end
-
-          write data
-        end
+        super(core_callback, reader_channel)
       end
 
-      super(callback)
+      # Pants will call this for you when it starts the reader that the seam is
+      # reading from.
+      def start
+
+        # You need to define a callback here so pants can call you back after its
+        # made sure that the seam's writers have been started.  This makes sure
+        # the seam doesn't start reading and pushing out data before the writers
+        # are ready to receive it.
+        callback = EM.Callback do
+          puts "Starting #{self.class}..."
+
+          read_items do |data|
+            if data.match(/pants/mi)
+              data << "Pants party at #{@host}!!!!!!\n"
+            end
+
+            write data
+          end
+        end
+
+        super(callback)
+      end
     end
-  end
 
-  # Assuming you have data coming in on this IP and UDP port, this reads each
-  # packet and hands it over to its writers--in this case, the file dump file
-  # writer, the UDP writer that sends to 10.0.0.50:9001, and our PacketInspector
-  # seam.
-  Pants.read('udp://10.0.0.1:9000') do |reader|
+    # Assuming you have data coming in on this IP and UDP port, this reads each
+    # packet and hands it over to its writers--in this case, the file dump file
+    # writer, the UDP writer that sends to 10.0.0.50:9001, and our PacketInspector
+    # seam.
+    Pants.read(__FILE__) do |reader|
 
-    # Dump UDP packets to a file
-    reader.write_to 'file_dump_of_udp_packets.udp'
+      # Dump UDP packets to a file
+      reader.write_to 'file_dump_of_udp_packets.udp'
 
-    # Redirect the UDP packets to another host
-    reader.write_to 'udp://10.0.0.50:9001'
+      # Redirect the UDP packets to another host
+      reader.write_to 'udp://127.0.0.1:9001'
 
-    # Inspect the UDP packets and notify about the party going on
-    packet_inspector = reader.add_seam(PacketInspector, '10.0.0.1')
+      # Inspect the UDP packets and notify about the party going on
+      pants_inspector = reader.add_seam(PantsInspector, 'localhost')
 
-    # The packet inspector seam behaves like a reader, which lets writers read
-    # from it.  Dump those party packets to a file
-    packet_inspector.write_to 'file_dump_of_party_packets.party'
+      # The packet inspector seam behaves like a reader, which lets writers read
+      # from it.  Dump those party packets to a file
+      pants_inspector.write_to 'file_dump_of_party_packets.party'
 
-    # Forward our partying packets on to another host.
-    packet_inspector.write_to 'udp://10.0.0.50:9000'
-  end
+      # Forward our partying packets on to another host.
+      pants_inspector.write_to 'udp://127.0.0.1:9002'
+    end
 
 If you actually run this, you'll have to ctrl-c out of it, as pants will read on
 that UDP socket indefinitely.  After doing that, you'll see that you've now got
