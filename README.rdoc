@@ -244,7 +244,7 @@ The examples from above can also be run via the command-line app like this:
 
           read_items do |data|
             if data.match(/pants/mi)
-              data << "Pants party at #{@host}!!!!!!\n"
+              data << "Pants party at #{@host}!!!!!!"
             end
 
             write data
@@ -259,31 +259,31 @@ The examples from above can also be run via the command-line app like this:
     # packet and hands it over to its writers--in this case, the file dump file
     # writer, the UDP writer that sends to 10.0.0.50:9001, and our PacketInspector
     # seam.
-    Pants.read(__FILE__) do |reader|
+    Pants.read('udp://127.0.0.1:1234') do |reader|
 
       # Dump UDP packets to a file
       reader.write_to 'file_dump_of_udp_packets.udp'
 
-      # Redirect the UDP packets to another host
-      reader.write_to 'udp://127.0.0.1:9001'
+      # Redirect the UDP packets to another socket
+      reader.write_to 'udp://127.0.0.1:9000'
 
       # Inspect the UDP packets and notify about the party going on
       pants_inspector = reader.add_seam(PantsInspector, 'localhost')
 
       # The packet inspector seam behaves like a reader, which lets writers read
-      # from it.  Dump those party packets to a file
+      # from it.  Dump those party packets to a file...
       pants_inspector.write_to 'file_dump_of_party_packets.party'
 
       # Forward our partying packets on to another host.
-      pants_inspector.write_to 'udp://127.0.0.1:9002'
+      pants_inspector.write_to 'udp://10.0.0.1:1234'
     end
 
 If you actually run this, you'll have to ctrl-c out of it, as pants will read on
 that UDP socket indefinitely.  After doing that, you'll see that you've now got
 a 'file_dump_of_udp_packets.udp', which contains the raw UDP data that came in
-on port 9000, and a 'file_dump_of_party_packets.party' file, which contains
+on port 1234, and a 'file_dump_of_party_packets.party' file, which contains
 those UDP packets with our party message at the end of each packet.  If you had
-a client listening at 10.0.0.50:9000 and 10.0.0.50:9001, it would received the
+a client listening at 127.0.0.1:9000 and 10.0.0.1:1234, it would received the
 exact same data that was written to the respective files.
 
 == REQUIREMENTS:
