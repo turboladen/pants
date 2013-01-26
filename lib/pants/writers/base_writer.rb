@@ -46,7 +46,7 @@ class Pants
         end
       end
 
-      # This should get called with #succeed after the writer is sure to be up
+      # This should get called with #call after the writer is sure to be up
       # and running, ready for accepting data.
       #
       # @return [EventMachine::Callback] The Callback that should get
@@ -55,7 +55,7 @@ class Pants
         @starter ||= EM.Callback { @running = true }
       end
 
-      # This should get called with #succeed after the writer is done writing
+      # This should get called with #call after the writer is done writing
       # out the data in its channel.
       #
       # @return [EventMachine::Callback] The Callback that should get
