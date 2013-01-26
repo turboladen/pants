@@ -15,9 +15,12 @@ class Pants
 
       # @param [EventMachine::Channel] write_to_channel The data channel to write
       #   read data to.
-      def initialize(write_to_channel, starter_deferrable)
+      #
+      # @param [EventMachine::Callback] starter_callback The callback that
+      #   should get called when the connection has been fully initialized.
+      def initialize(write_to_channel, starter_callback)
         @write_to_channel = write_to_channel
-        @starter_deferrable = starter_deferrable
+        @starter_callback = starter_callback
         port, ip = Socket.unpack_sockaddr_in(get_sockname)
 
         if Addrinfo.ip(ip).ipv4_multicast? || Addrinfo.ip(ip).ipv6_multicast?
@@ -29,7 +32,7 @@ class Pants
       end
 
       def post_init
-        @starter_deferrable.suceeded
+        @starter_callback.call
       end
 
       # Reads the data and writes it to the data channel.
