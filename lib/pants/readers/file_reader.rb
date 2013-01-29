@@ -12,8 +12,8 @@ class Pants
       # @param [EventMachine::Channel] write_to_channel The data channel to write
       #   read data to.
 
-      # @param [EventMachine::Callback] starter Gets called when the
-      #   it's been fulling initialized.
+      # @param [EventMachine::Callback] starter Gets called when it's
+      #   been fulling initialized.
       #
       # @param [EventMachine::Callback] stopper Gets called when the
       #   file-to-read has been fully read.
