@@ -4,7 +4,7 @@ require 'pants/readers/pipe_reader'
 
 describe Pants::Readers::PipeReader do
   describe '#start' do
-    let(:cmd) { double "some command" }
+    let(:cmd) { "echo" }
     let(:starter) { double "EventMachine::Callback starter" }
     let(:stopper) { double "EventMachine::Callback stopper" }
     let(:core_stopper_callback) { double "EventMachine::Callback core stopper" }
