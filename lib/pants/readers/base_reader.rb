@@ -130,10 +130,10 @@ class Pants
       def add_writer(obj, *args)
         if obj.is_a? Class
           @writers << obj.new(*args, @write_to_channel)
-        elsif obj.kind_of? Pants::Writers::BaseWriter
+        elsif obj.kind_of?(Pants::Writers::BaseWriter) || obj.kind_of?(Pants::Seam)
           @writers << obj
         else
-          raise Pants::Error, "Don't know how to add a writer of type #{obj}"
+          raise Pants::Error, "Don't know how to add a writer of type #{obj.class}"
         end
 
         @writers.last
