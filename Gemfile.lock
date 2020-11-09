@@ -28,7 +28,7 @@ GEM
       simplecov-html (~> 0.7.1)
     simplecov-html (0.7.1)
     thor (0.17.0)
-    yard (0.8.3)
+    yard (0.9.25)
 
 PLATFORMS
   java
